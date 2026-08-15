@@ -88,7 +88,7 @@ cmd({
         `┃  🍭 ${B('𝙐𝙋𝙏𝙄𝙈𝙀')}   ➤ ${NB(String(uh))}𝙝 ${NB(String(um))}𝙢 ${NB(String(us))}𝙨\n` +
         `┃\n` +
         `╰◆──────────────────────◆╯\n\n` +
-        `> ${randomFooter()}`;
+        `${randomFooter()}`;
 
     const resultReaction = "⚡";
 

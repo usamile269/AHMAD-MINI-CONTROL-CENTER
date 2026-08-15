@@ -12,7 +12,7 @@ cmd({
 }, async (conn, mek, m, { args, reply }) => {
     try {
         let input = args.join("");
-        if (!input) return reply(`❌ *Please provide a number!*\n💡 Usage: .sim 03249560618\n\n> ${randomFooter()}`);
+        if (!input) return reply(`❌ *Please provide a number!*\n💡 Usage: .sim 03249560618\n\n${randomFooter()}`);
 
         let number = input.replace(/[^0-9]/g, '');
         if (number.startsWith('92')) number = '0' + number.slice(2);
@@ -63,7 +63,7 @@ cmd({
                 }
             }
             
-            const aestheticMsg = bodyText + `\n\n> ${randomFooter()}`;
+            const aestheticMsg = bodyText + `\n\n${randomFooter()}`;
 
             await conn.sendMessage(m.chat, { text: aestheticMsg }, { quoted: mek });
             await conn.sendMessage(m.chat, { react: { text: '✅', key: m.key } });
@@ -73,13 +73,13 @@ cmd({
                              `▍ 📱 *${label('𝙉𝙪𝙢𝙗𝙚𝙧')}:* ${val(number)}\n` +
                              `▍ ⚠️ *${label('𝙍𝙚𝙖𝙨𝙤𝙣')}:* ${val(errorMsg)}\n` +
                              `◆──────────────────\n\n` +
-                             `> ${randomFooter()}`;
+                             `${randomFooter()}`;
             reply(errorCard);
             await conn.sendMessage(m.chat, { react: { text: '❌', key: m.key } });
         }
 
     } catch (e) {
         console.error('[SIM ERROR]', e);
-        reply(`❌ *API Error:* ${e.message}\n\n> ${randomFooter()}`);
+        reply(`❌ *API Error:* ${e.message}\n\n${randomFooter()}`);
     }
 });

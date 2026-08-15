@@ -4,7 +4,7 @@ const { setAntideleteStatus, setAntideleteSendTo, setAntideleteGlobalStatus, set
 const { setAntieditStatus, setAntieditSendTo, setAntieditGlobalStatus, setAntieditGlobalSendTo } = require('../data/Antiedit');
 
 const B = toSansBoldItalic;
-const FOOTER = () => `\n\n> ${randomFooter()}`;
+const FOOTER = () => `\n\n${randomFooter()}`;
 
 // ============================================================================
 // ANTI-DELETE COMMANDS

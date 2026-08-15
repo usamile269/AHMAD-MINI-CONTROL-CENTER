@@ -64,7 +64,7 @@ cmd({
         const caption = `✦ ${B('AHMAD MINI')} 👻 ${B('is alive and watching')} 👀\n` +
             `💚 ${B(String(speedMs))}${B('ms')} · ⏱️ ${B(uptimeShort())}\n\n` +
             `${B(quote)}\n\n` +
-            `✦﹒${randomFooter()}`;
+            `${randomFooter()}`;
 
         // Bot's own WhatsApp profile picture — real fetch via Baileys, same
         // call used elsewhere in the bot (admin-plus.js, downloaders.js,

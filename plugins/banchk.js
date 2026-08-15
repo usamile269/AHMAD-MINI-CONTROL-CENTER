@@ -73,7 +73,7 @@ cmd({
             `┃\n` +
             `╰━━━━━━━━━━━━━━━━━━━━━━╯\n\n` +
             `*${S(exists ? randomActive : randomBanned)}* 💀🔥\n\n` +
-            `> ${config.BOT_FOOTER || randomFooter()}`;
+            `${config.BOT_FOOTER || randomFooter()}`;
 
         await conn.sendMessage(from, {
             text: messageText,
