@@ -3,281 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OBSIDIAN LUXE | CONTROL CENTER</title>
+    <title>OBSIDIAN LUXE | COMMAND CENTER v3.1</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         :root {
             --neon-pink: #ff007f;
-            --obsidian: #0a0a0a;
-            --glass: rgba(20, 20, 20, 0.7);
+            --obsidian: #050505;
+            --glass: rgba(15, 15, 15, 0.85);
+            --border: rgba(255, 0, 127, 0.25);
         }
         body {
             background: var(--obsidian);
-            color: white;
+            color: #e0e0e0;
             font-family: 'Rajdhani', sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
         }
         .luxury-font { font-family: 'Orbitron', sans-serif; }
+        .mono-font { font-family: 'JetBrains Mono', monospace; }
+        
+        .glass-sidebar {
+            background: rgba(10, 10, 10, 0.95);
+            border-right: 1px solid var(--border);
+            box-shadow: 10px 0 30px rgba(0, 0, 0, 0.5);
+        }
         .glass-card {
             background: var(--glass);
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 0, 127, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9);
         }
-        .neon-glow {
-            box-shadow: 0 0 15px var(--neon-pink);
+        .neon-text { text-shadow: 0 0 15px var(--neon-pink); }
+        .neon-border-glow:focus { border-color: var(--neon-pink); box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
+        
+        .terminal-window {
+            background: #000;
+            border: 1px solid #333;
+            color: #00ff00;
+            font-size: 0.85rem;
+            padding: 15px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.05);
         }
-        .neon-text {
-            text-shadow: 0 0 10px var(--neon-pink);
-        }
-        .bg-animate {
-            background: radial-gradient(circle at 50% 50%, #1a000a 0%, #0a0a0a 100%);
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            z-index: -1;
-        }
-        .neon-circle {
-            position: absolute;
-            width: 300px; height: 300px;
-            background: var(--neon-pink);
-            filter: blur(150px);
-            opacity: 0.15;
-            border-radius: 50%;
-            animation: move 20s infinite alternate;
-        }
-        @keyframes move {
-            from { transform: translate(-10%, -10%); }
-            to { transform: translate(110%, 110%); }
-        }
-        input, select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 0, 127, 0.3);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            outline: none;
+        
+        .nav-item {
+            padding: 15px 25px;
+            border-left: 3px solid transparent;
             transition: 0.3s;
+            cursor: pointer;
         }
-        input:focus { border-color: var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.5); }
+        .nav-item:hover { background: rgba(255, 0, 127, 0.05); border-left-color: var(--neon-pink); }
+        .nav-item.active { background: rgba(255, 0, 127, 0.1); border-left-color: var(--neon-pink); color: white; }
+        
+        .bg-grid {
+            background-image: linear-gradient(rgba(255, 0, 127, 0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 0, 127, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2;
+        }
+        
         .btn-luxe {
             background: linear-gradient(45deg, #ff007f, #800040);
-            transition: 0.3s;
             text-transform: uppercase;
             letter-spacing: 2px;
-            font-weight: bold;
+            font-weight: 700;
+            transition: 0.4s;
         }
-        .btn-luxe:hover { transform: scale(1.05); box-shadow: 0 0 20px var(--neon-pink); }
+        .btn-luxe:hover { box-shadow: 0 0 25px var(--neon-pink); transform: translateY(-2px); }
+        
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--neon-pink); }
     </style>
 </head>
-<body>
-    <div class="bg-animate"></div>
-    <div class="neon-circle"></div>
-    
-    <!-- Login Screen -->
-    <div id="login-screen" class="min-h-screen flex items-center justify-center">
-        <div class="glass-card p-10 rounded-2xl w-full max-w-md text-center">
-            <h1 class="luxury-font text-3xl mb-6 neon-text">🛡️ ACCESS LOCKED</h1>
-            <p class="text-gray-400 mb-8 italic">Enter Master Key to control Obsidian Luxe</p>
-            <input type="password" id="admin-pass" placeholder="MASTER KEY" class="w-full mb-6 text-center text-xl tracking-widest">
-            <button onclick="login()" class="btn-luxe w-full py-3 rounded-lg">INITIALIZE SYSTEM</button>
-            <p id="login-error" class="text-red-500 mt-4 hidden">❌ Invalid Access Key</p>
+<body class="flex h-screen">
+    <div class="bg-grid"></div>
+
+    <!-- Login Overlay -->
+    <div id="login-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-xl">
+        <div class="glass-card p-12 rounded-3xl w-full max-w-lg text-center border-t-4 border-pink-600">
+            <div class="mb-8">
+                <div class="w-20 h-20 bg-pink-600 rounded-full mx-auto mb-4 flex items-center justify-center neon-glow">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                </div>
+                <h1 class="luxury-font text-4xl neon-text mb-2">SYSTEM LOCKED</h1>
+                <p class="text-gray-500 tracking-widest uppercase text-sm">Ahmad Mini Control Suite v3.1</p>
+            </div>
+            <input type="password" id="master-key" placeholder="••••••••••••" class="w-full bg-black/50 border border-pink-900/50 rounded-xl py-4 text-center text-2xl tracking-[10px] text-pink-500 mb-6 neon-border-glow">
+            <button onclick="authenticate()" class="btn-luxe w-full py-4 rounded-xl text-lg">INITIATE CONNECTION</button>
+            <p id="auth-error" class="text-red-500 mt-4 hidden mono-font">ERR_INVALID_ACCESS_KEY</p>
         </div>
     </div>
 
-    <!-- Main Dashboard -->
-    <div id="dashboard" class="hidden min-h-screen p-6 lg:p-12">
-        <header class="flex justify-between items-center mb-12 border-b border-pink-900/30 pb-6">
-            <div>
-                <h1 class="luxury-font text-4xl neon-text">𝙊𝘽𝙎𝙄𝘿𝙄𝘼𝙉 𝙇𝙐𝙓𝙀</h1>
-                <p class="text-pink-500 tracking-[5px] text-sm uppercase">Control Center v3.0</p>
-            </div>
-            <button onclick="logout()" class="text-gray-500 hover:text-white transition">DISCONNECT</button>
-        </header>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Stats Column -->
-            <div class="lg:col-span-1 space-y-8">
-                <div class="glass-card p-6 rounded-xl">
-                    <h2 class="luxury-font text-xl mb-4 flex items-center">📊 SYSTEM STATUS</h2>
-                    <div class="space-y-4">
-                        <div class="flex justify-between border-b border-white/5 pb-2">
-                            <span class="text-gray-400">Connection</span>
-                            <span id="status-conn" class="text-green-500 font-bold">ONLINE</span>
-                        </div>
-                        <div class="flex justify-between border-b border-white/5 pb-2">
-                            <span class="text-gray-400">Active Sessions</span>
-                            <span id="status-sessions" class="text-pink-500">0</span>
-                        </div>
-                        <div class="flex justify-between border-b border-white/5 pb-2">
-                            <span class="text-gray-400">RAM Usage</span>
-                            <span id="status-ram" class="text-blue-400">0 MB</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-400">Uptime</span>
-                            <span id="status-uptime" class="text-yellow-500">0h 0m</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card p-6 rounded-xl">
-                    <h2 class="luxury-font text-xl mb-4 flex items-center">📢 CHANNEL WHITELIST</h2>
-                    <div id="channel-list" class="space-y-3 mb-6 max-h-60 overflow-y-auto">
-                        <!-- Channels will load here -->
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="new-jid" placeholder="JID (e.g. 123@newsletter)" class="flex-1 text-sm">
-                        <button onclick="addChannel()" class="btn-luxe px-4 rounded text-sm">+</button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Column -->
-            <div class="lg:col-span-2 space-y-8">
-                <div class="glass-card p-8 rounded-xl">
-                    <h2 class="luxury-font text-2xl mb-8 border-l-4 border-pink-600 pl-4">⚙️ GLOBAL CONFIGURATION</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Bot Display Name</label>
-                            <input type="text" id="cfg-bot-name">
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Command Prefix</label>
-                            <input type="text" id="cfg-prefix">
-                        </div>
-                        <div class="flex flex-col md:col-span-2">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Global Footer</label>
-                            <input type="text" id="cfg-footer">
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Auto View Status</label>
-                            <select id="cfg-auto-view">
-                                <option value="true">ENABLED</option>
-                                <option value="false">DISABLED</option>
-                            </select>
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Auto Like Status</label>
-                            <select id="cfg-auto-like">
-                                <option value="true">ENABLED</option>
-                                <option value="false">DISABLED</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="glass-card p-8 rounded-xl">
-                    <h2 class="luxury-font text-2xl mb-8 border-l-4 border-blue-600 pl-4">🎬 MEDIA HUB</h2>
-                    <div class="space-y-6">
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Welcome Video URL (WhatsApp PTV)</label>
-                            <input type="text" id="cfg-welcome-video">
-                        </div>
-                        <div class="flex flex-col">
-                            <label class="text-xs text-gray-500 mb-1 uppercase tracking-wider">Hero Section Video URL (Web)</label>
-                            <input type="text" id="cfg-hero-video">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-4">
-                    <button onclick="resetToDefault()" class="px-8 py-3 border border-white/10 rounded-lg hover:bg-white/5 transition">RESET ALL</button>
-                    <button onclick="saveAllSettings()" class="btn-luxe px-12 py-3 rounded-lg neon-glow">SAVE CHANGES</button>
-                </div>
-            </div>
+    <!-- Sidebar -->
+    <aside class="w-72 glass-sidebar flex flex-col z-10">
+        <div class="p-8 border-b border-pink-900/20">
+            <h2 class="luxury-font text-xl text-white neon-text">𝑨𝑯𝑴𝑨𝑫 𝑴𝑰𝑵𝑰</h2>
+            <p class="text-[10px] text-pink-600 tracking-[4px] uppercase font-bold">Luxe Command</p>
         </div>
-    </div>
+        <nav class="flex-1 mt-6">
+            <div class="nav-item active" onclick="showTab('dashboard')">
+                <span class="mr-3">📡</span> DASHBOARD
+            </div>
+            <div class="nav-item" onclick="showTab('settings')">
+                <span class="mr-3">⚙️</span> CONFIGURATION
+            </div>
+            <div class="nav-item" onclick="showTab('whitelist')">
+                <span class="mr-3">🛡️</span> WHITELIST
+            </div>
+            <div class="nav-item" onclick="showTab('media')">
+                <span class="mr-3">🎬</span> MEDIA HUB
+            </div>
+            <div class="nav-item" onclick="showTab('logs')">
+                <span class="mr-3">📟</span> LIVE CONSOLE
+            </div>
+        </nav>
+        <div class="p-6 border-t border-pink-900/20 text-center">
+            <button onclick="logout()" class="text-gray-600 hover:text-pink-500 text-xs tracking-widest uppercase">Terminate Session</button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto p-10 relative">
+        <!-- Dashboard Tab -->
+        <section id="tab-dashboard" class="tab-content space-y-8">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h2 class="luxury-font text-3xl text-white">SYSTEM OVERVIEW</h2>
+                    <p class="text-gray-500 uppercase tracking-widest text-xs">Real-time bot metrics</p>
+                </div>
+                <div class="flex gap-4">
+                    <button onclick="triggerAction('restart')" class="px-6 py-2 border border-yellow-900/50 text-yellow-500 rounded-lg hover:bg-yellow-900/10 transition text-xs font-bold uppercase">Restart Bot</button>
+                    <button onclick="triggerAction('clear-session')" class="px-6 py-2 border border-red-900/50 text-red-500 rounded-lg hover:bg-red-900/10 transition text-xs font-bold uppercase">Clear Sessions</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-card p-6 rounded-2xl">
+                    <p class="text-xs text-gray-500 mb-1 uppercase">Connection</p>
+                    <p id="stat-status" class="text-2xl font-bold text-green-500 luxury-font">ONLINE</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl">
+                    <p class="text-xs text-gray-500 mb-1 uppercase">Active Users</p>
+                    <p id="stat-sessions" class="text-2xl font-bold text-pink-500 luxury-font">0</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl">
+                    <p class="text-xs text-gray-500 mb-1 uppercase">Memory RSS</p>
+                    <p id="stat-ram" class="text-2xl font-bold text-blue-500 luxury-font">0 MB</p>
+                </div>
+                <div class="glass-card p-6 rounded-2xl">
+                    <p class="text-xs text-gray-500 mb-1 uppercase">System Uptime</p>
+                    <p id="stat-uptime" class="text-2xl font-bold text-yellow-500 luxury-font">0h 0m</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="glass-card p-8 rounded-2xl">
+                    <h3 class="luxury-font text-lg mb-6 border-b border-white/5 pb-4">📟 SYSTEM CONSOLE (PREVIEW)</h3>
+                    <div id="console-preview" class="terminal-window mono-font">
+                        [SYSTEM] Initializing Obsidian Luxe v3.1...
+                        [AUTH] Master Key verified.
+                        [CORE] Monitoring whitelisted channels...
+                    </div>
+                </div>
+                <div class="glass-card p-8 rounded-2xl">
+                    <h3 class="luxury-font text-lg mb-6 border-b border-white/5 pb-4">💎 QUICK ACTIONS</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="showTab('settings')" class="bg-white/5 p-4 rounded-xl hover:bg-white/10 transition text-left">
+                            <p class="text-pink-500 font-bold mb-1">Update Config</p>
+                            <p class="text-[10px] text-gray-500">Change bot name, footer, etc.</p>
+                        </button>
+                        <button onclick="showTab('whitelist')" class="bg-white/5 p-4 rounded-xl hover:bg-white/10 transition text-left">
+                            <p class="text-blue-500 font-bold mb-1">Manage Channels</p>
+                            <p class="text-[10px] text-gray-500">Add/Remove whitelisted JIDs</p>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration Tab -->
+        <section id="tab-settings" class="tab-content hidden space-y-8">
+            <h2 class="luxury-font text-3xl text-white">CORE CONFIGURATION</h2>
+            <div class="glass-card p-10 rounded-3xl space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Bot Identity Name</label>
+                        <input type="text" id="cfg-bot-name" class="w-full neon-border-glow">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Global Prefix</label>
+                        <input type="text" id="cfg-prefix" class="w-full neon-border-glow">
+                    </div>
+                    <div class="space-y-2 md:col-span-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Obsidian Luxe Footer</label>
+                        <input type="text" id="cfg-footer" class="w-full neon-border-glow">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Auto View Status</label>
+                        <select id="cfg-auto-view" class="w-full neon-border-glow">
+                            <option value="true">ENABLED</option>
+                            <option value="false">DISABLED</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Auto Like Status</label>
+                        <select id="cfg-auto-like" class="w-full neon-border-glow">
+                            <option value="true">ENABLED</option>
+                            <option value="false">DISABLED</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-6">
+                    <button onclick="saveSettings()" class="btn-luxe px-12 py-4 rounded-xl shadow-lg">Commit Changes</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Whitelist Tab -->
+        <section id="tab-whitelist" class="tab-content hidden space-y-8">
+            <h2 class="luxury-font text-3xl text-white">CHANNEL FIREWALL</h2>
+            <div class="glass-card p-10 rounded-3xl">
+                <div id="whitelist-container" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <!-- Channels -->
+                </div>
+                <div class="flex gap-4">
+                    <input type="text" id="new-jid" placeholder="Enter Newsletter JID (e.g. 12345@newsletter)" class="flex-1 neon-border-glow">
+                    <button onclick="addWhitelist()" class="btn-luxe px-8 rounded-xl">Add to Firewall</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Media Hub Tab -->
+        <section id="tab-media" class="tab-content hidden space-y-8">
+            <h2 class="luxury-font text-3xl text-white">MEDIA ASSETS</h2>
+            <div class="glass-card p-10 rounded-3xl space-y-10">
+                <div class="space-y-4">
+                    <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Welcome Video (WhatsApp PTV)</label>
+                    <input type="text" id="cfg-welcome-video" class="w-full neon-border-glow">
+                    <p class="text-[10px] text-pink-600 italic">Recommended: Luxury 8s Obsidian video note</p>
+                </div>
+                <div class="space-y-4">
+                    <label class="text-xs text-gray-500 uppercase font-bold tracking-widest">Hero Section Video (Web Portal)</label>
+                    <input type="text" id="cfg-hero-video" class="w-full neon-border-glow">
+                    <p class="text-[10px] text-blue-600 italic">Recommended: High-quality landscape aesthetic video</p>
+                </div>
+                <div class="flex justify-end pt-6">
+                    <button onclick="saveSettings()" class="btn-luxe px-12 py-4 rounded-xl shadow-lg">Sync Media</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Logs Tab -->
+        <section id="tab-logs" class="tab-content hidden space-y-8 h-full flex flex-col">
+            <div class="flex justify-between items-center">
+                <h2 class="luxury-font text-3xl text-white">LIVE SYSTEM LOGS</h2>
+                <button onclick="clearLogs()" class="text-xs text-gray-500 hover:text-white uppercase tracking-widest">Clear Console</button>
+            </div>
+            <div id="full-console" class="terminal-window mono-font flex-1 !h-full">
+                [SYSTEM] Log stream initialized...
+            </div>
+        </section>
+    </main>
 
     <script>
-        let masterKey = '';
+        let sessionKey = '';
 
-        async function login() {
-            const pass = document.getElementById('admin-pass').value;
+        async function authenticate() {
+            const key = document.getElementById('master-key').value;
             const res = await fetch('/admin/verify-key', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: pass })
+                body: JSON.stringify({ key })
             });
             const data = await res.json();
             if (data.success) {
-                masterKey = pass;
-                document.getElementById('login-screen').classList.add('hidden');
-                document.getElementById('dashboard').classList.remove('hidden');
-                loadDashboard();
-                setInterval(loadStats, 5000);
+                sessionKey = key;
+                document.getElementById('login-overlay').classList.add('hidden');
+                initDashboard();
             } else {
-                document.getElementById('login-error').classList.remove('hidden');
+                document.getElementById('auth-error').classList.remove('hidden');
             }
         }
 
-        function logout() {
-            location.reload();
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`tab-${tab}`).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.currentTarget.classList.add('active');
         }
 
-        async function loadDashboard() {
-            const res = await fetch(`/admin/site-settings?key=${masterKey}`);
+        async function initDashboard() {
+            loadData();
+            setInterval(loadStats, 3000);
+            setInterval(loadLogs, 2000);
+        }
+
+        async function loadData() {
+            const res = await fetch(`/admin/site-settings?key=${sessionKey}`);
             const data = await res.json();
             if (data.success) {
                 const s = data.settings;
-                document.getElementById('cfg-bot-name').value = s.botName || 'AHMAD MINI';
-                document.getElementById('cfg-prefix').value = s.prefix || '.';
+                document.getElementById('cfg-bot-name').value = s.botName || '';
+                document.getElementById('cfg-prefix').value = s.prefix || '';
                 document.getElementById('cfg-footer').value = s.footer || '';
                 document.getElementById('cfg-auto-view').value = s.autoViewStatus || 'true';
                 document.getElementById('cfg-auto-like').value = s.autoLikeStatus || 'true';
                 document.getElementById('cfg-welcome-video').value = s.welcomeVideo || '';
                 document.getElementById('cfg-hero-video').value = s.heroVideo || '';
-                
-                renderChannels(s.whitelist || []);
+                renderWhitelist(s.whitelist || []);
             }
-            loadStats();
         }
 
         async function loadStats() {
-            const res = await fetch(`/admin/stats?key=${masterKey}`);
+            const res = await fetch(`/admin/stats?key=${sessionKey}`);
             const data = await res.json();
             if (data.success) {
-                document.getElementById('status-sessions').innerText = data.stats.activeSessions;
-                document.getElementById('status-ram').innerText = data.stats.ram;
-                document.getElementById('status-uptime').innerText = data.stats.uptime;
+                document.getElementById('stat-sessions').innerText = data.stats.activeSessions;
+                document.getElementById('stat-ram').innerText = data.stats.ram;
+                document.getElementById('stat-uptime').innerText = data.stats.uptime;
             }
         }
 
-        function renderChannels(list) {
-            const container = document.getElementById('channel-list');
-            container.innerHTML = list.map((jid, i) => `
-                <div class="flex justify-between items-center bg-white/5 p-2 rounded border border-white/10">
-                    <span class="text-xs truncate max-w-[200px]">${jid}</span>
-                    <button onclick="removeChannel('${jid}')" class="text-red-500 hover:text-red-400 text-xs">REMOVE</button>
+        async function loadLogs() {
+            const res = await fetch(`/admin/logs?key=${sessionKey}`);
+            const data = await res.json();
+            if (data.success) {
+                const logHtml = data.logs.map(log => `<div><span class="text-gray-500">[${log.time}]</span> <span class="${log.type === 'error' ? 'text-red-500' : 'text-green-400'}">${log.msg}</span></div>`).join('');
+                document.getElementById('console-preview').innerHTML = logHtml;
+                document.getElementById('full-console').innerHTML = logHtml;
+            }
+        }
+
+        function renderWhitelist(list) {
+            const container = document.getElementById('whitelist-container');
+            container.innerHTML = list.map(jid => `
+                <div class="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/10 hover:border-pink-500/30 transition">
+                    <span class="mono-font text-sm text-gray-300">${jid}</span>
+                    <button onclick="removeWhitelist('${jid}')" class="text-red-500 hover:text-red-400 text-xs font-bold uppercase">Revoke</button>
                 </div>
-            `).join('') || '<p class="text-gray-600 text-center py-4">No channels whitelisted</p>';
+            `).join('') || '<p class="col-span-2 text-center text-gray-600 py-10">NO CHANNELS IN FIREWALL</p>';
         }
 
-        async function addChannel() {
-            const jid = document.getElementById('new-jid').value.trim();
-            if (!jid) return;
-            const res = await fetch('/admin/whitelist/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: masterKey, jid })
-            });
-            const data = await res.json();
-            if (data.success) {
-                document.getElementById('new-jid').value = '';
-                loadDashboard();
-            }
-        }
-
-        async function removeChannel(jid) {
-            const res = await fetch('/admin/whitelist/remove', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: masterKey, jid })
-            });
-            const data = await res.json();
-            if (data.success) loadDashboard();
-        }
-
-        async function saveAllSettings() {
+        async function saveSettings() {
             const settings = {
                 botName: document.getElementById('cfg-bot-name').value,
                 prefix: document.getElementById('cfg-prefix').value,
@@ -290,16 +361,55 @@
             const res = await fetch('/admin/site-settings/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: masterKey, settings })
+                body: JSON.stringify({ key: sessionKey, settings })
             });
             const data = await res.json();
-            if (data.success) alert('✅ SYSTEM UPDATED SUCCESSFULLY');
+            if (data.success) alert('✅ CONFIG SYNCED SUCCESSFULLY');
         }
 
-        async function resetToDefault() {
-            if (confirm('Are you sure you want to reset all settings?')) {
-                // Reset logic here
+        async function addWhitelist() {
+            const jid = document.getElementById('new-jid').value.trim();
+            if (!jid) return;
+            const res = await fetch('/admin/whitelist/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: sessionKey, jid })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('new-jid').value = '';
+                loadData();
             }
+        }
+
+        async function removeWhitelist(jid) {
+            if (!confirm('Are you sure you want to revoke this channel access?')) return;
+            const res = await fetch('/admin/whitelist/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: sessionKey, jid })
+            });
+            const data = await res.json();
+            if (data.success) loadData();
+        }
+
+        async function triggerAction(action) {
+            if (!confirm(`Are you sure you want to ${action.toUpperCase()}?`)) return;
+            const res = await fetch(`/admin/action/${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: sessionKey })
+            });
+            const data = await res.json();
+            if (data.success) alert(`✅ ${action.toUpperCase()} INITIATED`);
+        }
+
+        function clearLogs() {
+            document.getElementById('full-console').innerHTML = '[SYSTEM] Console cleared.';
+        }
+
+        function logout() {
+            location.reload();
         }
     </script>
 </body>

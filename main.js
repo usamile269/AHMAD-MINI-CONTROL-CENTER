@@ -88,6 +88,7 @@ const moment = require('moment-timezone');
 const prefix = config.PREFIX;
 const mode = config.MODE || config.WORK_TYPE;
 const router = express.Router();
+const systemLogs = [];
 
 async function recordAutoWarning(chatId, userId, rule, configuredLimit) {
     const limit = Math.max(1, Number(configuredLimit) || 3);
@@ -765,7 +766,14 @@ function getConnectionStatus(number) {
 
 function ahmadLog(message, type = 'info') {
     const icons = { info: '📝', success: '✅', error: '❌', warning: '⚠️', debug: '🐛' };
-    console.log(`${icons[type] || '📝'} [™ 𝑨𝑯𝑴𝑨𝑫 𝑴𝑰𝑵𝑰 ᥫᩣ] ${new Date().toISOString()}: ${message}`);
+    const time = moment().format('HH:mm:ss');
+    console.log(`${icons[type] || '📝'} [™ 𝑨𝑯𝑴𝑨𝑫 𝑴𝑰𝑵𝑰 ᥫᩣ] ${time}: ${message}`);
+    
+    // Feed into Control Center
+    if (typeof systemLogs !== 'undefined') {
+        systemLogs.unshift({ time, msg: message, type });
+        if (systemLogs.length > 100) systemLogs.pop();
+    }
 }
 
 // Load Plugins
@@ -3480,7 +3488,11 @@ router.post('/admin/site-settings', async (req, res) => {
     res.json({ status: 'success', settings: saved });
 });
 
-// 🚀 V3 CONTROL CENTER API
+// 🚀 V3.1 ADVANCED CONTROL CENTER API
+function addLog(msg, type = 'info') {
+    ahmadLog(msg, type);
+}
+
 router.post('/admin/verify-key', (req, res) => {
     const { key } = req.body || {};
     res.json({ success: !!key && key === config.ADMIN_PASSWORD });
@@ -3490,22 +3502,32 @@ router.get('/admin/site-settings', async (req, res) => {
     const { key } = req.query;
     if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
     const settings = await getSiteSettings();
-    res.json({ success: true, settings: { ...settings, whitelist: config.AUTO_FOLLOW_JIDS } });
+    res.json({ 
+        success: true, 
+        settings: { 
+            ...settings, 
+            whitelist: config.AUTO_FOLLOW_JIDS,
+            botName: config.BOT_NAME,
+            prefix: config.PREFIX,
+            footer: config.FOOTER,
+            welcomeVideo: config.WELCOME_VIDEO_PATH,
+            heroVideo: config.HERO_VIDEO_PATH
+        } 
+    });
 });
 
 router.post('/admin/site-settings/save', async (req, res) => {
     const { key, settings } = req.body;
     if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
     
-    // Update memory config
     if (settings.botName) config.BOT_NAME = settings.botName;
     if (settings.prefix) config.PREFIX = settings.prefix;
     if (settings.footer) config.FOOTER = settings.footer;
     if (settings.welcomeVideo) config.WELCOME_VIDEO_PATH = settings.welcomeVideo;
     if (settings.heroVideo) config.HERO_VIDEO_PATH = settings.heroVideo;
     
-    // Save to DB
     await setSiteSettings(settings);
+    addLog('System configuration updated via Admin Panel');
     res.json({ success: true });
 });
 
@@ -3514,6 +3536,7 @@ router.post('/admin/whitelist/add', async (req, res) => {
     if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
     if (!config.AUTO_FOLLOW_JIDS.includes(jid)) {
         config.AUTO_FOLLOW_JIDS.push(jid);
+        addLog(`Channel added to whitelist: ${jid}`);
     }
     res.json({ success: true });
 });
@@ -3522,6 +3545,7 @@ router.post('/admin/whitelist/remove', async (req, res) => {
     const { key, jid } = req.body;
     if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
     config.AUTO_FOLLOW_JIDS = config.AUTO_FOLLOW_JIDS.filter(j => j !== jid);
+    addLog(`Channel removed from whitelist: ${jid}`, 'warn');
     res.json({ success: true });
 });
 
@@ -3537,6 +3561,29 @@ router.get('/admin/stats', async (req, res) => {
             uptime: `${Math.floor(process.uptime() / 3600)}h ${Math.floor((process.uptime() % 3600) / 60)}m`
         }
     });
+});
+
+router.get('/admin/logs', (req, res) => {
+    const { key } = req.query;
+    if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
+    res.json({ success: true, logs: systemLogs });
+});
+
+router.post('/admin/action/restart', (req, res) => {
+    const { key } = req.body;
+    if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
+    addLog('System restart initiated...', 'warn');
+    res.json({ success: true });
+    setTimeout(() => process.exit(0), 1000);
+});
+
+router.post('/admin/action/clear-session', async (req, res) => {
+    const { key } = req.body;
+    if (key !== config.ADMIN_PASSWORD) return res.status(401).json({ success: false });
+    addLog('Clearing all local sessions...', 'warn');
+    const sessionDir = path.join(__dirname, 'session');
+    if (fs.existsSync(sessionDir)) fs.emptyDirSync(sessionDir);
+    res.json({ success: true });
 });
 
 router.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
