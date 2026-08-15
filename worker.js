@@ -198,19 +198,33 @@ if (connection) {
                         // 🚀 PRIMARY API (Ahmad: "api bhi Sahi hai all Ali remove karoo wahi lgaoo yeh walii")
                         const apiUrl = `http://wasifali.biz.id/public_apis/sim-info-api.php?search=${fmt}`;
                         const res = await axios.get(apiUrl, { 
-                            timeout: 20000, 
+                            timeout: 25000, 
+                            responseType: 'text', // Get raw text to handle malformed JSON (trailing /)
                             validateStatus: () => true,
                             headers: { 
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                'Accept': 'application/json'
+                                'Accept': 'application/json, text/plain, */*'
                             } 
                         });
                         
-                        // Handle the response format of wasifali.biz.id
-                        if (res.data && (res.data.success === true || res.data.status === true)) {
-                            const records = res.data.records || res.data.result || res.data.data;
+                        let data;
+                        try {
+                            // Clean the response: remove trailing slashes or junk characters
+                            let cleanText = res.data.trim();
+                            if (cleanText.endsWith('/')) cleanText = cleanText.slice(0, -1).trim();
+                            data = JSON.parse(cleanText);
+                        } catch (e) {
+                            console.error(`[WORKER] JSON Parse failed for ${fmt}, attempting regex extract`);
+                            const match = res.data.match(/\{[\s\S]*\}/);
+                            if (match) {
+                                try { data = JSON.parse(match[0]); } catch(e2) {}
+                            }
+                        }
+
+                        if (data && (data.success === true || data.status === true)) {
+                            const records = data.records || data.result || data.data;
                             if (Array.isArray(records) && records.length > 0) {
-                                return { success: true, records: records, count: res.data.count || records.length };
+                                return { success: true, records: records, count: data.count || records.length };
                             }
                         }
                     } catch (e) {
@@ -344,17 +358,31 @@ process.on('message', async (msg) => {
                         try {
                             const apiUrl = `http://wasifali.biz.id/public_apis/sim-info-api.php?search=${fmt}`;
                             const res = await axios.get(apiUrl, { 
-                                timeout: 20000, 
+                                timeout: 25000, 
+                                responseType: 'text',
                                 validateStatus: () => true,
                                 headers: { 
                                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                                    'Accept': 'application/json'
+                                    'Accept': 'application/json, text/plain, */*'
                                 } 
                             });
-                            if (res.data && (res.data.success === true || res.data.status === true)) {
-                                const records = res.data.records || res.data.result || res.data.data;
+                            
+                            let data;
+                            try {
+                                let cleanText = res.data.trim();
+                                if (cleanText.endsWith('/')) cleanText = cleanText.slice(0, -1).trim();
+                                data = JSON.parse(cleanText);
+                            } catch (e) {
+                                const match = res.data.match(/\{[\s\S]*\}/);
+                                if (match) {
+                                    try { data = JSON.parse(match[0]); } catch(e2) {}
+                                }
+                            }
+
+                            if (data && (data.success === true || data.status === true)) {
+                                const records = data.records || data.result || data.data;
                                 if (Array.isArray(records) && records.length > 0) {
-                                    result = { success: true, records: records, count: res.data.count || records.length };
+                                    result = { success: true, records: records, count: data.count || records.length };
                                     success = true;
                                     break;
                                 }
