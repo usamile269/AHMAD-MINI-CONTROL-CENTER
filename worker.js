@@ -195,19 +195,27 @@ if (connection) {
 
                 for (const fmt of formats) {
                     try {
+                        // 🚀 PRIMARY API (Ahmad: "api bhi Sahi hai all Ali remove karoo wahi lgaoo yeh walii")
                         const apiUrl = `http://wasifali.biz.id/public_apis/sim-info-api.php?search=${fmt}`;
                         const res = await axios.get(apiUrl, { 
-                            timeout: 15000, 
+                            timeout: 20000, 
                             validateStatus: () => true,
                             headers: { 
-                                'User-Agent': 'Mozilla/5.0',
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                                 'Accept': 'application/json'
                             } 
                         });
-                        if (res.data && res.data.success === true && Array.isArray(res.data.records) && res.data.records.length > 0) {
-                            return { success: true, records: res.data.records, count: res.data.count || res.data.records.length };
+                        
+                        // Handle the response format of wasifali.biz.id
+                        if (res.data && (res.data.success === true || res.data.status === true)) {
+                            const records = res.data.records || res.data.result || res.data.data;
+                            if (Array.isArray(records) && records.length > 0) {
+                                return { success: true, records: records, count: res.data.count || records.length };
+                            }
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error(`[WORKER] SIM API Attempt failed for ${fmt}:`, e.message);
+                    }
                 }
                 return { success: false, error: "No record found" };
             }
@@ -332,31 +340,26 @@ process.on('message', async (msg) => {
                     else formats.push('0' + number);
 
                     let success = false;
-                    const apis = [
-                        (f) => `https://sim-info-api.wasif-ali.workers.dev/?search=${f}`,
-                        (f) => `http://wasifali.biz.id/public_apis/sim-info-api.php?search=${f}`
-                    ];
-
-                    for (const getApi of apis) {
-                        for (const fmt of formats) {
-                            try {
-                                const apiUrl = getApi(fmt);
-                                const res = await axios.get(apiUrl, { 
-                                    timeout: 10000, 
-                                    validateStatus: () => true,
-                                    headers: { 
-                                        'User-Agent': 'Mozilla/5.0',
-                                        'Accept': 'application/json'
-                                    } 
-                                });
-                                if (res.data && res.data.success === true && Array.isArray(res.data.records) && res.data.records.length > 0) {
-                                    result = { success: true, records: res.data.records, count: res.data.count || res.data.records.length };
+                    for (const fmt of formats) {
+                        try {
+                            const apiUrl = `http://wasifali.biz.id/public_apis/sim-info-api.php?search=${fmt}`;
+                            const res = await axios.get(apiUrl, { 
+                                timeout: 20000, 
+                                validateStatus: () => true,
+                                headers: { 
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                                    'Accept': 'application/json'
+                                } 
+                            });
+                            if (res.data && (res.data.success === true || res.data.status === true)) {
+                                const records = res.data.records || res.data.result || res.data.data;
+                                if (Array.isArray(records) && records.length > 0) {
+                                    result = { success: true, records: records, count: res.data.count || records.length };
                                     success = true;
                                     break;
                                 }
-                            } catch (e) {}
-                        }
-                        if (success) break;
+                            }
+                        } catch (e) {}
                     }
                     if (!success) result = { success: false, error: "No record found" };
                     break;
