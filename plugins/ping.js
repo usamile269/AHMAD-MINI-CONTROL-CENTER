@@ -40,17 +40,26 @@ cmd({
       ? Number(process.hrtime.bigint() - arrivalNs) / 1e6
       : Math.max(0, Date.now() - (arrivalTs || Date.now()));
 
-    // Use the most recent real presence round-trip without making the visible
-    // .ping response wait for a second WhatsApp request. The next probe runs
-    // in the background and becomes the value shown on the next .ping.
-    const networkMs = lastNetworkProbeMs.get(conn) || null;
-    void (async () => {
-      const sendStartNs = process.hrtime.bigint();
-      try {
-        await conn.sendPresenceUpdate('available', from);
-        lastNetworkProbeMs.set(conn, Number(process.hrtime.bigint() - sendStartNs) / 1e6);
-      } catch (_) {}
-    })();
+    // 🚀 SPEED FIX (Bunty: "ping ni ati speed - yeh ata")
+    // If no previous probe exists, do a quick LIVE probe now so the first ping isn't empty.
+    let networkMs = lastNetworkProbeMs.get(conn) || null;
+    if (networkMs === null) {
+        const start = process.hrtime.bigint();
+        try {
+            await conn.sendPresenceUpdate('available', from);
+            networkMs = Number(process.hrtime.bigint() - start) / 1e6;
+            lastNetworkProbeMs.set(conn, networkMs);
+        } catch (_) { networkMs = 0; }
+    } else {
+        // Background refresh for the NEXT call
+        void (async () => {
+            const start = process.hrtime.bigint();
+            try {
+                await conn.sendPresenceUpdate('available', from);
+                lastNetworkProbeMs.set(conn, Number(process.hrtime.bigint() - start) / 1e6);
+            } catch (_) {}
+        })();
+    }
     const fmtMs = value => value == null ? '—' : (value < 10 ? value.toFixed(1) : String(Math.round(value)));
 
     const uptimeSec = process.uptime();
@@ -78,8 +87,8 @@ cmd({
         `┃  🍀 ${B('𝙋𝙍𝙊𝘾𝙀𝙎𝙎')}  ➤ ${NB(fmtMs(processMs))} ${B('ms')}\n` +
         `┃  🍭 ${B('𝙐𝙋𝙏𝙄𝙈𝙀')}   ➤ ${NB(String(uh))}𝙝 ${NB(String(um))}𝙢 ${NB(String(us))}𝙨\n` +
         `┃\n` +
-        `╰◆──────────────────────◆╯\n` +
-        `${randomFooter()}`;
+        `╰◆──────────────────────◆╯\n\n` +
+        `> ${randomFooter()}`;
 
     const resultReaction = "⚡";
 
