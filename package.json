@@ -1,0 +1,46 @@
+{
+  "name": "ahmad-bot",
+  "version": "2.0.0",
+  "description": "WhatsApp Bot Base - AHMAD MD",
+  "main": "index.js",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "worker": "node worker.js",
+    "postinstall": "node scripts/prepare-ytdlp.js"
+  },
+  "dependencies": {
+    "@distube/ytdl-core": "^4.16.12",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@whiskeysockets/baileys": "7.0.0-rc14",
+    "axios": "^1.18.1",
+    "body-parser": "^1.20.2",
+    "bullmq": "^6.1.0",
+    "cors": "^2.8.5",
+    "dotenv": "latest",
+    "edge-tts-universal": "^1.4.0",
+    "express": "^4.18.2",
+    "file-type": "21.0.0",
+    "fluent-ffmpeg": "^2.1.2",
+    "form-data": "^4.0.0",
+    "fs-extra": "^11.2.0",
+    "ioredis": "^5.7.0",
+    "moment-timezone": "^0.6.0",
+    "mongodb": "^6.10.0",
+    "mumaker": "^2.0.0",
+    "node-fetch": "^2.7.0",
+    "nsfwjs": "^4.4.0",
+    "path": "^0.12.7",
+    "pino": "^8.17.0",
+    "ruhend-scraper": "latest",
+    "sharp": "^0.35.3",
+    "yt-dlp-wrap": "^2.3.12",
+    "yt-search": "^2.13.1"
+  },
+  "optionalDependencies": {
+    "@tensorflow/tfjs-node": "^4.22.0"
+  }
+}
