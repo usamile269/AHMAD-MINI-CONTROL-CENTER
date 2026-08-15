@@ -139,6 +139,7 @@ async (conn, mek, m, { reply, args, from }) => {
 // 2. .video / .ytmp4
 cmd({ pattern: 'ytmp4', alias: ['video', 'yta', 'ytv'], desc: 'Download YouTube as MP4', category: 'download', react: '🎬' },
 async (conn, mek, m, { reply, args, from }) => {
+    const { offloadTask } = require('../lib/queue');
     const query = args.join(' ').trim();
     if (!query) return reply(usageBox('video', 'name'));
     
@@ -153,11 +154,14 @@ async (conn, mek, m, { reply, args, from }) => {
                 `🎬 ${video.title?.slice(0, 50)}`,
                 `👤 ${video.author}`,
                 ...(video.duration ? [`⏱️ ${video.duration}`] : []),
-                `⏳ Downloading...`
+                `🚀 *Rocketing to you...*`
             ], '🎬')
         }, { quoted: fakevCard }).catch(() => {});
 
-        const downloadUrl = await getWorkingUrls(video.url, 'mp4');
+        // 🚀 SPEED BOOST: Offload to worker for faster resolution and multi-threaded processing
+        const workerRes = await offloadTask('media.resolve', { kind: 'video', url: video.url }, 45000);
+        const downloadUrl = workerRes?.url;
+        if (!downloadUrl) throw new Error('All download links are currently restricted.');
 
         try {
             await conn.sendMessage(from, {
@@ -166,7 +170,8 @@ async (conn, mek, m, { reply, args, from }) => {
                 caption: dlBox('DONE', [`🎬 ${video.title?.slice(0,50)}`], '✅')
             }, { quoted: mek });
         } catch (e) {
-            const res = await axios.get(downloadUrl, { responseType: 'arraybuffer', timeout: 60000 });
+            // Fallback: download to buffer if direct URL fails
+            const res = await axios.get(downloadUrl, { responseType: 'arraybuffer', timeout: 90000 });
             await conn.sendMessage(from, {
                 video: Buffer.from(res.data),
                 mimetype: 'video/mp4',

@@ -68,27 +68,37 @@ async function elite(kind, url) {
 
 async function resolveMedia(kind, url) {
     if (!isYouTubeUrl(url)) {
-        // Fallback for non-YouTube links (e.g. TikTok/Insta if supported by providers)
         console.log(`[WORKER] Non-YouTube URL: ${url}. Attempting universal providers...`);
     }
+    
+    // 🚀 OPTIMIZED PROVIDER CHAIN (Bunty: "play fast, video slow fix")
+    // Reordered to prioritize the most stable and fast providers first.
     const providers = kind === 'video'
         ? [
+            ['ElitePro', () => elite(kind, url)],
+            ['JawadTech', () => jawad(kind, url)],
             ['AhmadMediaAPI', () => firstParty(kind, url)],
             ['AdeelXtech', () => adeelVideo(url)],
-            ['JawadTech', () => jawad(kind, url)],
-            ['ElitePro', () => elite(kind, url)]
+            ['Siputzx', async () => {
+                const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp4?url=${encodeURIComponent(url)}`, { timeout: 10000 });
+                return res.data?.data?.dl;
+            }]
         ]
         : [
-            ['AhmadMediaAPI', () => firstParty(kind, url)],
             ['JawadTech', () => jawad(kind, url)],
-            ['ElitePro', () => elite(kind, url)]
+            ['ElitePro', () => elite(kind, url)],
+            ['AhmadMediaAPI', () => firstParty(kind, url)],
+            ['Siputzx', async () => {
+                const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp3?url=${encodeURIComponent(url)}`, { timeout: 10000 });
+                return res.data?.data?.dl;
+            }]
         ];
 
     let lastError;
     for (const [name, call] of providers) {
         try {
             const mediaUrl = await call();
-            if (!mediaUrl || !/^https?:\/\//i.test(mediaUrl)) throw new Error('provider returned no valid URL');
+            if (!mediaUrl || !/^https?:\/\//i.test(mediaUrl)) throw new Error('no valid URL');
             return { url: mediaUrl, provider: name, kind };
         } catch (error) {
             lastError = error;
