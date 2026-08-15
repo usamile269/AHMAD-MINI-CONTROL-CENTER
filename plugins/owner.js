@@ -1204,3 +1204,80 @@ cmd({
 
 // Export ban/whitelist/premium lists for use in main.js middleware
 module.exports = { banList, whitelist, blacklist, premiumList, ownerList, maintenanceMode };
+
+// ══════════════════════════════════════════════
+// ★ CHANNEL MANAGEMENT (v3.1)
+// ══════════════════════════════════════════════
+
+// 10. addchannel
+cmd({
+    pattern: 'addchannel',
+    alias: ['ach'],
+    desc: 'Add a channel JID to the auto-follow whitelist',
+    category: 'owner',
+    react: '📢'
+}, async (conn, mek, m, { isOwner, reply, text }) => {
+    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!text || !text.includes('@newsletter')) return reply(`📢 ${toFancy('Usage')}: .addchannel <jid>@newsletter`);
+    
+    if (!config.AUTO_FOLLOW_JIDS.includes(text)) {
+        config.AUTO_FOLLOW_JIDS.push(text);
+        reply(`✅ ${toFancy('Channel Added')}: ${text}\n_${toFancy('Bot will now auto-follow and react to this channel')}_` + FOOTER());
+    } else {
+        reply(`ℹ️ ${toFancy('Channel already in whitelist')}` + FOOTER());
+    }
+});
+
+// 11. removechannel
+cmd({
+    pattern: 'removechannel',
+    alias: ['rch'],
+    desc: 'Remove a channel JID from the whitelist',
+    category: 'owner',
+    react: '🗑️'
+}, async (conn, mek, m, { isOwner, reply, text }) => {
+    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!text) return reply(`🗑️ ${toFancy('Usage')}: .removechannel <jid>`);
+    
+    const initialLength = config.AUTO_FOLLOW_JIDS.length;
+    config.AUTO_FOLLOW_JIDS = config.AUTO_FOLLOW_JIDS.filter(j => j !== text);
+    
+    if (config.AUTO_FOLLOW_JIDS.length < initialLength) {
+        reply(`✅ ${toFancy('Channel Removed')}: ${text}` + FOOTER());
+    } else {
+        reply(`❌ ${toFancy('Channel not found in whitelist')}` + FOOTER());
+    }
+});
+
+// 12. channellist
+cmd({
+    pattern: 'channellist',
+    alias: ['chl'],
+    desc: 'Show all whitelisted channels',
+    category: 'owner',
+    react: '📋'
+}, async (conn, mek, m, { isOwner, reply }) => {
+    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (config.AUTO_FOLLOW_JIDS.length === 0) return reply(`📋 ${toFancy('No channels in whitelist')}`);
+    
+    let list = `╭━━━〔 📢 ${toFancy('WHITELISTED CHANNELS')} 〕━━━╮\n\n`;
+    config.AUTO_FOLLOW_JIDS.forEach((jid, i) => {
+        list += `  ${i+1}. ${jid}\n`;
+    });
+    list += `\n╰━━━━━━━━━━━━━━━━━━━━╯` + FOOTER();
+    reply(list);
+});
+
+// 13. setadminpass
+cmd({
+    pattern: 'setadminpass',
+    desc: 'Set the web admin panel password',
+    category: 'owner',
+    react: '🔐'
+}, async (conn, mek, m, { isOwner, reply, text }) => {
+    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!text) return reply(`🔐 ${toFancy('Usage')}: .setadminpass <new_password>`);
+    
+    config.ADMIN_PASSWORD = text;
+    reply(`✅ ${toFancy('Admin Password Updated')}\n_${toFancy('Use this key to login at /admin')}_` + FOOTER());
+});
