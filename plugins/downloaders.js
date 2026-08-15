@@ -14,7 +14,7 @@ const AXIOS_OPTS = {
 };
 
 function dlBox(title, lines, emoji = '⬇️') {
-    return `╭═══ ${emoji} ${toSansBold(title)} ═══⊷\n┃❃╭──────────────\n${lines.map(l=>`┃❃│ ${toSansBold(l)}`).join('\n')}\n┃❃╰───────────────\n╰═════════════════⊷\n\n${randomFooter()}`;
+    return `╭═══ ${emoji} ${toSansBold(title)} ═══⊷\n┃❃╭──────────────\n${lines.map(l=>`┃❃│ ${toSansBold(l)}`).join('\n')}\n┃❃╰───────────────\n╰═════════════════⊷\n\n> ${randomFooter()}`;
 }
 
 function usageBox(command, type = 'media') {
@@ -154,7 +154,7 @@ async (conn, mek, m, { reply, args, from }) => {
                 `🎬 ${video.title?.slice(0, 50)}`,
                 `👤 ${video.author}`,
                 ...(video.duration ? [`⏱️ ${video.duration}`] : []),
-                `🚀 *Rocketing to you...*`
+                `⏳ 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴...`
             ], '🎬')
         }, { quoted: fakevCard }).catch(() => {});
 

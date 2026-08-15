@@ -12,10 +12,21 @@ if (!connection) {
 
 const MAX_JOB_TIMEOUT_MS = Math.max(3000, Number(process.env.WORKER_JOB_TIMEOUT_MS) || 15000);
 const CONCURRENCY = Math.max(1, Math.min(8, Number(process.env.WORKER_CONCURRENCY) || 2));
-const HTTP_HEADERS = {
-    'User-Agent': 'MINI-FINAL-WORKER/1.0',
-    'Accept': 'application/json, text/plain, */*'
-};
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+];
+
+const getHeaders = () => ({
+    'User-Agent': USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)],
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Referer': 'https://www.google.com/',
+    'Origin': 'https://www.google.com/'
+});
+
+const HTTP_HEADERS = getHeaders();
 const FIRST_PARTY_URL = String(process.env.AHMAD_MEDIA_API_URL || '').replace(/\/$/, '');
 const FIRST_PARTY_KEY = String(process.env.AHMAD_MEDIA_API_KEY || '');
 const { smartAI } = require('./lib/ai-provider');
@@ -75,13 +86,16 @@ async function resolveMedia(kind, url) {
     // Reordered to prioritize the most stable and fast providers first.
     const providers = kind === 'video'
         ? [
-            ['ElitePro', () => elite(kind, url)],
             ['JawadTech', () => jawad(kind, url)],
+            ['ElitePro', () => elite(kind, url)],
             ['AhmadMediaAPI', () => firstParty(kind, url)],
-            ['AdeelXtech', () => adeelVideo(url)],
             ['Siputzx', async () => {
-                const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp4?url=${encodeURIComponent(url)}`, { timeout: 10000 });
-                return res.data?.data?.dl;
+                const res = await axios.get(`https://api.siputzx.my.id/api/d/ytmp4?url=${encodeURIComponent(url)}`, { timeout: 15000, headers: getHeaders() });
+                return res.data?.data?.dl || res.data?.result?.url || res.data?.url;
+            }],
+            ['DarkYTDL', async () => {
+                const res = await axios.get(`https://api.darlyn.my.id/api/ytdl?url=${encodeURIComponent(url)}`, { timeout: 15000, headers: getHeaders() });
+                return res.data?.result?.mp4;
             }]
         ]
         : [
