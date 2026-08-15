@@ -5,7 +5,7 @@ const GLOBAL_KEY = '__GLOBAL__';
 // Stored locally now (JSON file via lib/jsondb.js) instead of MongoDB.
 const GroupSettings = jsondb.model('GroupSettings');
 
-const DEFAULTS = { welcomeOn: false, welcomeMsg: "Welcome @user to the group! 🎉", welcomeVideo: null, goodbyeMsg: null, goodbyeVideo: null, kickMsg: null, warnLimit: 3, antilink: false, antilinkAction: 'delete', rules: null, badwords: [], slowmodeSec: 0, nightMode: null, mediaLock: false, groupEmoji: null, antiflood: false, antifloodLimit: 6, antifloodWindowSec: 10, antifloodAction: 'warn', antitag: false, antitagLimit: 5, antitagAction: 'warn', antisticker: false, anticontact: false, antiforward: false, antiforwardAction: 'delete', antinsfw: false, antinsfwThreshold: 0.82, antinsfwAction: 'kick', aiMode: false };
+const DEFAULTS = { welcomeOn: false, welcomeMsg: "Welcome @user to the group! 🎉", welcomeVideo: null, goodbyeMsg: null, goodbyeVideo: null, kickMsg: null, warnLimit: 3, antilink: false, antilinkAction: 'delete', rules: null, badwords: [], slowmodeSec: 0, nightMode: null, mediaLock: false, groupEmoji: null, antiforward: false, antiforwardAction: 'delete' };
 
 // 🚨 SPEED FIX (same class as getUserConfigFromMongoDB in lib/database.js):
 // this was hitting the DB fresh on every antilink/slowmode/nightmode-relevant

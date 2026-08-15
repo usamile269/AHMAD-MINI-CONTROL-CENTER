@@ -28,9 +28,6 @@ const getAntieditSendTo = async (botNumber, chatId) => {
             Antiedit.findOne({ chatId: chatKeyFor(botNumber, chatId) }),
             Antiedit.findOne({ chatId: globalKeyFor(botNumber) })
         ]);
-        // An active overall setting belongs only to this paired bot number
-        // and takes precedence over stale per-chat destination overrides.
-        if (globalData?.status === true && globalData.sendTo) return globalData.sendTo;
         if (chatData && chatData.sendTo) return chatData.sendTo;
         if (globalData && globalData.sendTo) return globalData.sendTo;
         return 'same';

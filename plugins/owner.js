@@ -2,7 +2,7 @@ const { cmd } = require('../ahmad-core');
 const config = require('../config');
 const fs = require('fs');
 const path = require('path');
-const { ownerOnlyDenied, randomFooter } = require('../lib/menu-styles');
+const { ownerOnlyDenied } = require('../lib/menu-styles');
 
 // ====================================================
 // AHMAD MINI — OWNER COMMANDS (54 total)
@@ -22,7 +22,7 @@ function toFancy(text) {
 }
 
 const BOT = config.BOT_NAME || '™ 𝑨𝑯𝑴𝑨𝑫 𝑴𝑰𝑵𝑰 ᥫᩣ';
-const FOOTER = () => "\n\n" + (config.BOT_FOOTER || randomFooter());
+const FOOTER = config.BOT_FOOTER || randomFooter();
 
 // In-memory stores (persist across commands in same session)
 const banList    = new Set();
@@ -51,7 +51,7 @@ cmd({
     category: 'owner',
     react: '📢'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`📢 ${toFancy('Usage')}: .broadcast <message>`);
     const groups = await conn.groupFetchAllParticipating();
     const ids = Object.keys(groups);
@@ -63,7 +63,7 @@ cmd({
             await jitterDelay();
         } catch { failed++; }
     }
-    reply(`✅ ${toFancy('Broadcast Done')}\n📤 ${toFancy('Sent')}: ${sent}\n❌ ${toFancy('Failed')}: ${failed}` + FOOTER());
+    reply(`✅ ${toFancy('Broadcast Done')}\n📤 ${toFancy('Sent')}: ${sent}\n❌ ${toFancy('Failed')}: ${failed}`);
 });
 
 // 2. broadcastusers
@@ -74,7 +74,7 @@ cmd({
     category: 'owner',
     react: '📢'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`📢 ${toFancy('Usage')}: .broadcastusers <message>`);
     const contacts = await conn.getContacts?.() || [];
     const users = Object.values(contacts).filter(c => c.id?.endsWith('@s.whatsapp.net'));
@@ -86,7 +86,7 @@ cmd({
             await jitterDelay();
         } catch { failed++; }
     }
-    reply(`✅ ${toFancy('Broadcast Done')}\n📤 ${toFancy('Sent')}: ${sent}\n❌ ${toFancy('Failed')}: ${failed}` + FOOTER());
+    reply(`✅ ${toFancy('Broadcast Done')}\n📤 ${toFancy('Sent')}: ${sent}\n❌ ${toFancy('Failed')}: ${failed}`);
 });
 
 // 3. forwardall
@@ -97,7 +97,7 @@ cmd({
     category: 'owner',
     react: '📨'
 }, async (conn, mek, m, { isOwner, reply, quoted }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!quoted) return reply(`📨 ${toFancy('Reply to a message first')}`);
     const groups = await conn.groupFetchAllParticipating();
     const ids = Object.keys(groups);
@@ -120,7 +120,7 @@ cmd({
     category: 'owner',
     react: '💬'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) {
         config.AUTO_STATUS_MSG = config.AUTO_STATUS_MSG || '🤗';
         return reply(`💬 ${toFancy('Current Status Reply')}:\n${config.AUTO_STATUS_MSG}`);
@@ -140,7 +140,7 @@ cmd({
     category: 'owner',
     react: '🚫'
 }, async (conn, mek, m, { isOwner, reply, args, sender, quoted }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const target = args[0]?.replace(/[^0-9]/g,'') 
         || quoted?.sender?.split('@')[0] 
         || sender.split('@')[0];
@@ -156,7 +156,7 @@ cmd({
     category: 'owner',
     react: '✅'
 }, async (conn, mek, m, { isOwner, reply, args, quoted }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const target = args[0]?.replace(/[^0-9]/g,'') || quoted?.sender?.split('@')[0];
     if (!target) return reply(`✅ ${toFancy('Usage')}: .unban <number>`);
     banList.delete(target);
@@ -170,7 +170,7 @@ cmd({
     category: 'owner',
     react: '📋'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (banList.size === 0) return reply(`📋 ${toFancy('Ban List is Empty')}`);
     const list = [...banList].map((n, i) => `${i+1}. +${n}`).join('\n');
     reply(`🚫 ${toFancy('Banned Numbers')} (${banList.size})\n\n${list}\n\n_${FOOTER}_`);
@@ -184,7 +184,7 @@ cmd({
     category: 'owner',
     react: '⭐'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const num = args[0]?.replace(/[^0-9]/g,'');
     if (!num) return reply(`⭐ ${toFancy('Usage')}: .whitelist <number>`);
     whitelist.add(num);
@@ -199,7 +199,7 @@ cmd({
     category: 'owner',
     react: '🔴'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const jid = args[0] || m?.chat;
     if (!jid) return reply(`🔴 ${toFancy('Usage')}: .blacklist <groupJid or run in group>`);
     blacklist.add(jid);
@@ -214,7 +214,7 @@ cmd({
     category: 'owner',
     react: '💎'
 }, async (conn, mek, m, { isOwner, reply, args, quoted }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const num = args[0]?.replace(/[^0-9]/g,'') || quoted?.sender?.split('@')[0];
     if (!num) return reply(`💎 ${toFancy('Usage')}: .addpremium <number>`);
     premiumList.add(num);
@@ -229,7 +229,7 @@ cmd({
     category: 'owner',
     react: '💎'
 }, async (conn, mek, m, { isOwner, reply, args, quoted }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const num = args[0]?.replace(/[^0-9]/g,'') || quoted?.sender?.split('@')[0];
     if (!num) return reply(`💎 ${toFancy('Usage')}: .delpremium <number>`);
     premiumList.delete(num);
@@ -244,7 +244,7 @@ cmd({
     category: 'owner',
     react: '💎'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (premiumList.size === 0) return reply(`💎 ${toFancy('No Premium Users Yet')}`);
     const list = [...premiumList].map((n,i)=>`${i+1}. +${n}`).join('\n');
     reply(`💎 ${toFancy('Premium Users')} (${premiumList.size})\n\n${list}\n\n_${FOOTER}_`);
@@ -261,7 +261,7 @@ cmd({
     category: 'owner',
     react: '🔗'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`🔗 ${toFancy('Usage')}: .join <group invite link>`);
     try {
         const code = text.split('https://chat.whatsapp.com/')[1];
@@ -280,7 +280,7 @@ cmd({
     category: 'owner',
     react: '👋'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const groups = await conn.groupFetchAllParticipating();
     const ids = Object.keys(groups).filter(id => id !== m?.chat);
     let left = 0;
@@ -298,7 +298,7 @@ cmd({
     category: 'owner',
     react: '📋'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const groups = await conn.groupFetchAllParticipating();
     const list = Object.values(groups).map((g,i) => `${i+1}. ${g.subject}`).join('\n');
     reply(`📋 ${toFancy('Groups Joined')} (${Object.keys(groups).length})\n\n${list}\n\n_${FOOTER}_`);
@@ -312,7 +312,7 @@ cmd({
     category: 'owner',
     react: '🔄'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     await reply(`🔄 ${toFancy('Restarting')} ${BOT}...`);
     setTimeout(() => process.exit(0), 1500);
 });
@@ -325,7 +325,7 @@ cmd({
     category: 'owner',
     react: '⛔'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     await reply(`⛔ ${BOT} ${toFancy('Shutting Down')}...\n_${FOOTER}_`);
     setTimeout(() => process.exit(1), 1500);
 });
@@ -338,7 +338,7 @@ cmd({
     category: 'owner',
     react: '🔧'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const val = args[0]?.toLowerCase();
     if (val === 'on') { maintenanceMode = true; }
     else if (val === 'off') { maintenanceMode = false; }
@@ -354,7 +354,7 @@ cmd({
     category: 'owner',
     react: '👑'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const val = args[0]?.toLowerCase();
     const current = config.ADMIN_ONLY || 'false';
     config.ADMIN_ONLY = (val === 'on') ? 'true' : (val === 'off') ? 'false' : current === 'true' ? 'false' : 'true';
@@ -369,7 +369,7 @@ cmd({
     category: 'owner',
     react: '⏱️'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const sec = parseInt(args[0]);
     if (isNaN(sec) || sec < 0) return reply(`⏱️ ${toFancy('Usage')}: .cooldown <seconds>`);
     config.CMD_COOLDOWN = sec;
@@ -389,7 +389,7 @@ cmd({
     category: 'owner',
     react: '🧨'
 }, async (conn, mek, m, { isOwner, reply, botNumber, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (args[0] !== 'confirm') {
         return reply(`🧨 *WIPE DATABASE*\n\nThis will delete from MongoDB for ${botNumber}:\n• Saved config/settings\n• Session record\n\nThe bot will disconnect immediately and need to be paired again via .pair/QR.\n\n⚠️ This only wipes settings/session — group settings (antidelete, welcome, etc.), warnings, and stats are NOT removed (those live in separate collections).\n\nTo confirm: .wipedb confirm`);
     }
@@ -414,7 +414,7 @@ cmd({
     category: 'owner',
     react: '🎬'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const url = args[0];
     if (!url) {
         config.WELCOME_VIDEO_PATH = '';
@@ -432,7 +432,7 @@ cmd({
     category: 'owner',
     react: '👀'
 }, async (conn, mek, m, { isOwner, reply, from, config: cfg }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const mode = cfg.MODE || cfg.WORK_TYPE;
     const welcomeHeaders = [
         `👑 ═══════════════ 👑\n   𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎\n   𝐀𝐇𝐌𝐀𝐃 - 𝐌𝐈𝐍𝐈\n👑 ═══════════════ 👑`,
@@ -442,7 +442,7 @@ cmd({
     ];
     const randomHeader = welcomeHeaders[Math.floor(Math.random() * welcomeHeaders.length)];
     const { randomFooter } = require('../lib/menu-styles');
-    const caption = `${randomHeader}\n\n✅ *Connected Successfully* — you're all set! 🔥\n\n┏━━━━━━━━━━━━━━┓\n┃ 📋 Menu   : ${cfg.PREFIX}menu\n┃ 🔧 Prefix : 「 ${cfg.PREFIX} 」\n┃ ⚙️ Mode   : 「 ${mode} 」\n┗━━━━━━━━━━━━━━┛\n\n💞 *Stay updated — join our channel:*\n${cfg.CHANNEL_LINK}\n\n━━━━━━━━━━━━━━━━━\n${randomFooter()}`;
+    const caption = `${randomHeader}\n\n✅ *Connected Successfully* — you're all set! 🔥\n\n┏━━━━━━━━━━━━━━┓\n┃ 📋 Menu   : ${cfg.PREFIX}menu\n┃ 🔧 Prefix : 「 ${cfg.PREFIX} 」\n┃ ⚙️ Mode   : 「 ${mode} 」\n┗━━━━━━━━━━━━━━┛\n\n💞 *Stay updated — join our channel:*\n${cfg.CHANNEL_LINK}\n\n━━━━━━━━━━━━━━━━━\n> ${randomFooter()}`;
     try {
         if (cfg.WELCOME_VIDEO_PATH) {
             await conn.sendMessage(from, { video: { url: cfg.WELCOME_VIDEO_PATH }, caption, ptv: true });
@@ -461,7 +461,7 @@ cmd({
     category: 'owner',
     react: '💾'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     try {
         const os = require('os');
         const dirs = [...new Set([os.tmpdir(), '/tmp'])];
@@ -505,7 +505,7 @@ cmd({
     category: 'owner',
     react: '♻️'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     config.ADMIN_ONLY = 'false';
     config.CMD_COOLDOWN = 0;
     maintenanceMode = false;
@@ -520,7 +520,7 @@ cmd({
     category: 'owner',
     react: '⏳'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const ms = parseInt(args[0]);
     if (isNaN(ms) || ms < 500) return reply(`⏳ ${toFancy('Usage')}: .bcdelay <ms> (min 500)`);
     broadcastDelay = ms;
@@ -539,7 +539,7 @@ cmd({
     category: 'owner',
     react: '⚡'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`⚡ ${toFancy('Usage')}: .eval <js code>`);
     try {
         let result = await eval(text);
@@ -559,7 +559,7 @@ cmd({
     category: 'owner',
     react: '🧩'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text || !text.includes('\n')) {
         return reply(`🧩 ${toFancy('Usage')}:\n.addcmd <name>\n<js code — use ctx.reply(...), ctx.args, ctx.text>\n\n${toFancy('Example')}:\n.addcmd hello\nctx.reply("Hi " + (m.pushName || "friend") + "!");\n\n⚠️ Runs with full bot access, same as .eval — only add code you trust.`);
     }
@@ -584,7 +584,7 @@ cmd({
     category: 'owner',
     react: '🗑️'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const pattern = (args[0] || '').toLowerCase().replace(/^\.+/, '');
     if (!pattern) return reply('❌ Usage: .delcmd <name>');
     const { removeCustomCommand } = require('../lib/custom-cmds');
@@ -600,7 +600,7 @@ cmd({
     category: 'owner',
     react: '📋'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const { listCustomCommands } = require('../lib/custom-cmds');
     const list = listCustomCommands();
     if (!list.length) return reply(`📋 ${toFancy('No custom commands yet')}. Add one with .addcmd`);
@@ -615,7 +615,7 @@ cmd({
     category: 'owner',
     react: '💻'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`💻 ${toFancy('Usage')}: .exec <command>`);
     const { exec } = require('child_process');
     exec(text, { timeout: 15000 }, (err, stdout, stderr) => {
@@ -632,7 +632,7 @@ cmd({
     category: 'owner',
     react: '📜'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (logBuffer.length === 0) return reply(`📜 ${toFancy('No logs yet')}`);
     reply(`📜 ${toFancy('Recent Logs')}:\n\n${logBuffer.slice(-20).join('\n')}`);
 });
@@ -644,7 +644,7 @@ cmd({
     category: 'owner',
     react: '🗑️'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     logBuffer.length = 0;
     reply(`🗑️ ${toFancy('Logs Cleared')}`);
 });
@@ -656,7 +656,7 @@ cmd({
     category: 'owner',
     react: '🔬'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const name = args[0]?.toLowerCase();
     if (!name) return reply(`🔬 ${toFancy('Usage')}: .testcmd <cmdname>`);
     const { commands } = require('../ahmad-core');
@@ -676,7 +676,7 @@ cmd({
     category: 'owner',
     react: '📋'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const { commands } = require('../ahmad-core');
     const list = commands.map((c,i) => `${i+1}. .${c.pattern} [${c.category}]`).join('\n');
     reply(`📋 ${toFancy('All Commands')} (${commands.length})\n\n${list.slice(0,3500)}`);
@@ -690,7 +690,7 @@ cmd({
     category: 'owner',
     react: '💓'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const { commands } = require('../ahmad-core');
     const uptime = process.uptime();
     const h = Math.floor(uptime/3600), min = Math.floor((uptime%3600)/60), s = Math.floor(uptime%60);
@@ -713,7 +713,7 @@ cmd({
     category: 'owner',
     react: '🧹'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const tmpDir = path.join(__dirname, '../temp');
     let count = 0;
     try {
@@ -737,7 +737,7 @@ cmd({
     category: 'owner',
     react: '📩'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const val = args[0]?.toLowerCase();
     config.FORWARD_LOG = (val === 'on') ? 'true' : (val === 'off') ? 'false' : config.FORWARD_LOG === 'true' ? 'false' : 'true';
     reply(`📩 ${toFancy('Forward Log')}: ${config.FORWARD_LOG === 'true' ? '✅ ON' : '❌ OFF'}`);
@@ -751,7 +751,7 @@ cmd({
     category: 'owner',
     react: '🔁'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     try {
         const pluginsDir = path.join(__dirname);
         const files = fs.readdirSync(pluginsDir).filter(f => f.endsWith('.js'));
@@ -775,7 +775,7 @@ cmd({
     category: 'owner',
     react: '🗑️'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const sessionDir = path.join(__dirname, '../session');
     let count = 0;
     try {
@@ -797,7 +797,7 @@ cmd({
     category: 'owner',
     react: '🔑'
 }, async (conn, mek, m, { isOwner, reply, sender }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const credsPath = path.join(__dirname, '../session/creds.json');
     try {
         if (!fs.existsSync(credsPath)) return reply(`❌ ${toFancy('creds.json not found')}`);
@@ -820,7 +820,7 @@ cmd({
     category: 'owner',
     react: '💾'
 }, async (conn, mek, m, { isOwner, reply, sender }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const dbPath = path.join(__dirname, '../database.json');
     try {
         if (!fs.existsSync(dbPath)) return reply(`❌ ${toFancy('database.json not found')}`);
@@ -843,7 +843,7 @@ cmd({
     category: 'owner',
     react: '📥'
 }, async (conn, mek, m, { isOwner, reply, quoted, downloadMediaMessage }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!quoted) return reply(`📥 ${toFancy('Reply to a .json file with .importdb')}`);
     try {
         const buffer = await downloadMediaMessage(quoted);
@@ -862,7 +862,7 @@ cmd({
     category: 'owner',
     react: '🔑'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!args[0] || !args[1]) return reply(`🔑 ${toFancy('Usage')}: .setapikey <name> <value>`);
     const key = args[0].toUpperCase();
     const val = args[1];
@@ -878,7 +878,7 @@ cmd({
     category: 'owner',
     react: '🗂️'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const apiKeys = Object.entries(config)
         .filter(([k]) => k.includes('API') || k.includes('TOKEN') || k.includes('KEY'))
         .map(([k, v]) => `🔑 ${k}: ${String(v).slice(0,6)}****`).join('\n');
@@ -897,7 +897,7 @@ cmd({
     category: 'owner',
     react: '👑'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     // 🚨 SECURITY FIX (Ahmad: "owner zone cmd only +923044975027 ho, koi
     // aur nahi"): this used to write the given number into a local
     // `ownerList` Set and reply "👑 Owner Added" — looking like it granted
@@ -917,7 +917,7 @@ cmd({
     category: 'owner',
     react: '👑'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     reply(`👑 ${toFancy('Multi-owner is disabled')}\n\nOnly +${config.OWNER_NUMBER} has owner access — there's nothing else to remove.`);
 });
 
@@ -929,7 +929,7 @@ cmd({
     category: 'owner',
     react: '👑'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     reply(`👑 ${toFancy('Owner')}\n\n1. +${config.OWNER_NUMBER}\n\n_${FOOTER}_`);
 });
 
@@ -940,7 +940,7 @@ cmd({
     category: 'owner',
     react: '👑'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const num = args[0]?.replace(/[^0-9]/g,'');
     if (!num) return reply(`👑 ${toFancy('Usage')}: .setbotowner <number>`);
     config.OWNER_NUMBER = `+${num}`;
@@ -983,7 +983,7 @@ cmd({
     category: 'owner',
     react: '➕'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const jid = args[0];
     if (!jid) return reply(`➕ ${toFancy('Usage')}: .addjid <jid>`);
     whitelist.add(jid);
@@ -998,7 +998,7 @@ cmd({
     category: 'owner',
     react: '➖'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const jid = args[0];
     if (!jid) return reply(`➖ ${toFancy('Usage')}: .removejid <jid>`);
     whitelist.delete(jid);
@@ -1013,7 +1013,7 @@ cmd({
     category: 'owner',
     react: '😊'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const emoji = args[0];
     if (!emoji) return reply(`😊 ${toFancy('Usage')}: .setglobalreact <emoji>`);
     config.GLOBAL_REACT = emoji;
@@ -1028,7 +1028,7 @@ cmd({
     category: 'owner',
     react: '📢'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const val = args[0]?.toLowerCase();
     config.FORCE_JOIN = (val === 'on') ? 'true' : (val === 'off') ? 'false' : config.FORCE_JOIN === 'true' ? 'false' : 'true';
     reply(`📢 ${toFancy('Force Join Channel')}: ${config.FORCE_JOIN === 'true' ? '✅ ON' : '❌ OFF'}`);
@@ -1042,7 +1042,7 @@ cmd({
     category: 'owner',
     react: '📢'
 }, async (conn, mek, m, { isOwner, reply, args }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!args[0]) return reply(`📢 ${toFancy('Usage')}: .setfjc <channel_link>`);
     config.CHANNEL_LINK = args[0];
     reply(`✅ ${toFancy('Force Join Channel Set')}:\n${args[0]}`);
@@ -1056,7 +1056,7 @@ cmd({
     category: 'owner',
     react: '📦'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     let pkgVersion = '1.0.0';
     try { pkgVersion = require('../package.json').version || pkgVersion; } catch {}
     reply(`📦 ${BOT}\n\n🔢 ${toFancy('Version')}: v${pkgVersion}\n⚙️ ${toFancy('Node')}: ${process.version}\n🔧 ${toFancy('Platform')}: ${process.platform}\n\n_${FOOTER}_`);
@@ -1069,7 +1069,7 @@ cmd({
     category: 'owner',
     react: '📝'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     reply(`📝 ${BOT} ${toFancy('Changelog')}\n\n` +
         `✅ ${toFancy('v1.0')} — ${toFancy('Initial Release')}\n` +
         `✅ ${toFancy('v1.1')} — ${toFancy('Added 43 GC commands')}\n` +
@@ -1084,7 +1084,7 @@ cmd({
     category: 'owner',
     react: '💸'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     reply(`💸 ${toFancy('Support')} ${BOT}\n\n` +
         `🌟 ${toFancy('Your support keeps the bot running!')}\n` +
         `📱 ${toFancy('Contact Owner for donation info')}\n` +
@@ -1098,7 +1098,7 @@ cmd({
     category: 'owner',
     react: '🌟'
 }, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     reply(`🌟 ${BOT} ${toFancy('Credits')}\n\n` +
         `👑 ${toFancy('Developer')}: Ahmad\n` +
         `🔧 ${toFancy('Framework')}: Baileys (WhiskeySockets)\n` +
@@ -1113,7 +1113,7 @@ cmd({
     category: 'owner',
     react: '💬'
 }, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     if (!text) return reply(`💬 ${toFancy('Usage')}: .setstatus <text>`);
     try {
         await conn.updateProfileStatus(text);
@@ -1135,7 +1135,7 @@ cmd({
     category: 'owner',
     react: '🧹'
 }, async (conn, mek, m, { isOwner, reply, botNumber }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     try {
         const { Antidelete, globalKeyFor: dGlobalKeyFor } = require('../data/Antidelete.js');
         const { Antiedit, globalKeyFor: eGlobalKeyFor } = require('../data/Antiedit.js');
@@ -1163,7 +1163,7 @@ cmd({
     category: 'owner',
     react: '📢'
 }, async (conn, mek, m, { isOwner, reply, config: cfg }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const channelLink = cfg.CHANNEL_LINK || '';
     if (!channelLink || !channelLink.includes('whatsapp.com/channel/')) {
         return reply('❌ No CHANNEL_LINK configured.');
@@ -1190,7 +1190,7 @@ cmd({
     category: 'owner',
     react: '📡'
 }, async (conn, mek, m, { isOwner, reply, sender }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
+    if (!isOwner) return reply(ownerOnlyDenied());
     const ownerJid = config.OWNER_NUMBER?.replace(/[^0-9]/g,'') + '@s.whatsapp.net';
     const start = Date.now();
     try {
@@ -1204,80 +1204,3 @@ cmd({
 
 // Export ban/whitelist/premium lists for use in main.js middleware
 module.exports = { banList, whitelist, blacklist, premiumList, ownerList, maintenanceMode };
-
-// ══════════════════════════════════════════════
-// ★ CHANNEL MANAGEMENT (v3.1)
-// ══════════════════════════════════════════════
-
-// 10. addchannel
-cmd({
-    pattern: 'addchannel',
-    alias: ['ach'],
-    desc: 'Add a channel JID to the auto-follow whitelist',
-    category: 'owner',
-    react: '📢'
-}, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
-    if (!text || !text.includes('@newsletter')) return reply(`📢 ${toFancy('Usage')}: .addchannel <jid>@newsletter`);
-    
-    if (!config.AUTO_FOLLOW_JIDS.includes(text)) {
-        config.AUTO_FOLLOW_JIDS.push(text);
-        reply(`✅ ${toFancy('Channel Added')}: ${text}\n_${toFancy('Bot will now auto-follow and react to this channel')}_` + FOOTER());
-    } else {
-        reply(`ℹ️ ${toFancy('Channel already in whitelist')}` + FOOTER());
-    }
-});
-
-// 11. removechannel
-cmd({
-    pattern: 'removechannel',
-    alias: ['rch'],
-    desc: 'Remove a channel JID from the whitelist',
-    category: 'owner',
-    react: '🗑️'
-}, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
-    if (!text) return reply(`🗑️ ${toFancy('Usage')}: .removechannel <jid>`);
-    
-    const initialLength = config.AUTO_FOLLOW_JIDS.length;
-    config.AUTO_FOLLOW_JIDS = config.AUTO_FOLLOW_JIDS.filter(j => j !== text);
-    
-    if (config.AUTO_FOLLOW_JIDS.length < initialLength) {
-        reply(`✅ ${toFancy('Channel Removed')}: ${text}` + FOOTER());
-    } else {
-        reply(`❌ ${toFancy('Channel not found in whitelist')}` + FOOTER());
-    }
-});
-
-// 12. channellist
-cmd({
-    pattern: 'channellist',
-    alias: ['chl'],
-    desc: 'Show all whitelisted channels',
-    category: 'owner',
-    react: '📋'
-}, async (conn, mek, m, { isOwner, reply }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
-    if (config.AUTO_FOLLOW_JIDS.length === 0) return reply(`📋 ${toFancy('No channels in whitelist')}`);
-    
-    let list = `╭━━━〔 📢 ${toFancy('WHITELISTED CHANNELS')} 〕━━━╮\n\n`;
-    config.AUTO_FOLLOW_JIDS.forEach((jid, i) => {
-        list += `  ${i+1}. ${jid}\n`;
-    });
-    list += `\n╰━━━━━━━━━━━━━━━━━━━━╯` + FOOTER();
-    reply(list);
-});
-
-// 13. setadminpass
-cmd({
-    pattern: 'setadminpass',
-    desc: 'Set the web admin panel password',
-    category: 'owner',
-    react: '🔐'
-}, async (conn, mek, m, { isOwner, reply, text }) => {
-    if (!isOwner) return reply(ownerOnlyDenied() + FOOTER());
-    if (!text) return reply(`🔐 ${toFancy('Usage')}: .setadminpass <new_password>`);
-    
-    config.ADMIN_PASSWORD = text;
-    reply(`✅ ${toFancy('Admin Password Updated')}\n_${toFancy('Use this key to login at /admin')}_` + FOOTER());
-});

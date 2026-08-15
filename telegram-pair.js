@@ -8,10 +8,10 @@ const express = require('express');
 const { saveTelegramUser, getAllTelegramUsers, getTelegramUserCount } = require('./lib/database');
 
 const TELEGRAM_TOKEN = config.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_API = TELEGRAM_TOKEN ? `https://api.telegram.org/bot${TELEGRAM_TOKEN}` : null;
 if (!TELEGRAM_TOKEN) {
-    console.warn('ℹ️ TELEGRAM_BOT_TOKEN is not set — Telegram pairing is disabled until the variable is configured.');
+    console.error('❌ TELEGRAM_BOT_TOKEN is not set! Set it in your host\'s environment variables (Railway/Render/etc → Variables). Get a token from @BotFather on Telegram. telegram-pair.js will not work until this is set.');
 }
+const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 
 let lastUpdateId = 0;
 
@@ -285,23 +285,12 @@ async function pollTelegram() {
             }
         }
     } catch (e) {
-        if (e.response && e.response.status === 409) {
-            // 🚨 CONFLICT FIX (Bunty: "Telegram poll error 409"): this happens
-            // when multiple instances of the bot are running at once. Wait longer
-            // before retrying to let the other instance potentially shut down.
-            console.log('ℹ️ Telegram conflict (409) — another instance is polling. Waiting 15s...');
-            return setTimeout(pollTelegram, 15000);
-        }
         console.error('Telegram poll error:', e.message);
     }
 
     setTimeout(pollTelegram, 2000);
 }
 
-if (TELEGRAM_TOKEN) {
-    console.log('🤖 Telegram pairing bot starting...');
-    console.log('   Open Telegram, find your bot, and send /start');
-    pollTelegram();
-} else {
-    console.log('ℹ️ Telegram pairing bot is disabled.');
-}
+console.log('🤖 Telegram pairing bot starting...');
+console.log('   Open Telegram, find your bot, and send /start');
+pollTelegram();

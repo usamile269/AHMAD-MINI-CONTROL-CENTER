@@ -1,27 +1,50 @@
 const { cmd } = require('../ahmad-core');
 const axios = require('axios');
 const config = require('../config');
-const { randomFooter, toSansBoldItalic } = require('../lib/menu-styles');
+const { randomFooter } = require('../lib/menu-styles');
 const { looksLikeIdentityQuestion, identityAnswer, withLanguageMatch } = require('../lib/ai-persona');
 const { smartAI, looksLikeErrorPayload } = require('../lib/ai-provider');
-const { getAIChatMode, setAIChatMode } = require('../data/AIChatMode');
-const { getAIAutoReplySettings, setAIAutoReplySettings } = require('../data/AIAutoReply');
-const { accountSettingGuard } = require('../lib/account-guard');
-// Direct provider calls keep one-shot AI commands independent from the media worker/IPC bridge.
 
-const FOOTER = randomFooter();
+const FOOTER = '> ' + randomFooter();
 
-function safeAIError(error) {
-    return String(error?.message || 'unknown provider error')
-        .replace(/(?:Bearer\s+|gsk_|sk-or-v1-)[A-Za-z0-9._-]+/gi, '[redacted]')
-        .replace(/\s+/g, ' ')
-        .slice(0, 280);
+// 🚨 FIX (Bunty: "Ai working ni Ahmad mini ka koi bhi") — gpt/deepseek/gemini
+// all pointed at random personal workers.dev Cloudflare Worker proxies
+// (apis-bj-devs, officialhectormanuel, bjcoderx). These are hobby projects
+// with no uptime guarantee and had gone dark, which is why every one of
+// these commands was failing — including the "fallback", which just pointed
+// at the same dead gpt-3-5.apis-bj-devs.workers.dev host as the primary, so
+// there was no real second option.
+// felix-rdx-unlimited-free-apis.vercel.app is the endpoint plugins/felix-apis.js
+// already uses for the working .ai and .imagine commands, so it's a proven-live
+// host rather than another guess. It's now the last-resort fallback for all
+// three chat commands: each still tries its own named model first (in case
+// those come back up), but if that fails, it lands on a host we know is up
+// instead of a second dead one.
+const FELIX_BASE = 'https://felix-rdx-unlimited-free-apis.vercel.app/api/v1/api';
+
+async function felixFallback(q) {
+    const res = await axios.get(`${FELIX_BASE}/gptlogic`, {
+        params: { q, prompt: 'Be friendly, helpful, and knowledgeable — answer thoroughly. Always reply in the SAME language and script the user wrote in (English, Roman Urdu, or Urdu script).' },
+        timeout: 25000
+    });
+    const answer = res.data && res.data.response;
+    if (looksLikeErrorPayload(answer)) throw new Error('Felix fallback returned an upstream error payload, not a real answer');
+    return answer;
 }
+// (Groq/OpenRouter chain now lives in lib/ai-provider.js — smartAI() below
+// tries both before anyone falls back to the old proxy chain here.)
 
 function aiReply(model, response) {
     return `╭═══ 🤖 ${model} ═══⊷\n┃❃╭──────────────\n┃❃│ ${response.split('\n').join('\n┃❃│ ')}\n┃❃╰───────────────\n╰═════════════════⊷\n\n${FOOTER}`;
 }
 
+// 🆕 (Bunty: "GPT ko sabse heavy banao, har language use kare, koi Ahmad/
+// Bunty ke baray mein pouchay to number ke sath batain") — real per-chat
+// conversation memory now, instead of the dead unused stub this used to be.
+// Free proxy APIs only take a single flat prompt string (no separate
+// message-array like real chat APIs), so recent turns get folded into the
+// prompt text itself — capped at the last 3 exchanges so the prompt doesn't
+// balloon in size or cost extra latency.
 const chatHistory = {}; // from -> [{u, a}, ...] capped at 3
 
 function buildPromptWithMemory(from, q) {
@@ -37,68 +60,15 @@ function saveToHistory(from, q, answer) {
     if (chatHistory[from].length > 3) chatHistory[from].shift();
 }
 
-// 1. ai — explicit mode controller and one-shot question command.
-// Mode is persisted per bot + chat and defaults OFF. In a group only an
-// admin/owner can change it; a normal member can still use `.ai question`
-// for a one-shot answer without enabling auto-replies for everyone.
-cmd({ pattern: 'ai', desc: 'Toggle AI mode: .ai on, .ai off, .ai status, or ask a question', category: 'ai', react: '🤖' },
-async (conn, mek, m, { reply, args, quoted, from, isGroup, isAdmins, isOwner, isMe, isPairedElsewhere, botNumber }) => {
-    const first = (args[0] || '').toLowerCase();
-    if (first === 'status') {
-        const enabled = isGroup
-            ? await getAIChatMode(botNumber, from)
-            : (await getAIAutoReplySettings(botNumber)).enabled === true;
-        return reply(`╭═══ 🤖 AI MODE ═══⊷\n┃❃│ ${toSansBoldItalic('Status')}: ${enabled ? 'ON ✅' : 'OFF 🔕'}\n┃❃│ ${toSansBoldItalic(isGroup ? 'Configuration saved for this group.' : 'Global DM auto-reply for this paired number.')}\n╰═════════════════⊷`);
-    }
-    if (first === 'on' || first === 'off') {
-        if (isGroup) {
-            if (!isAdmins && !isOwner) return reply('❌ Only group admins or the owner can change the AI mode.');
-        } else if (!accountSettingGuard({ isOwner, isMe, isPairedElsewhere, reply })) {
-            return;
-        }
-        const enabled = first === 'on';
-        const saved = isGroup
-            ? await setAIChatMode(botNumber, from, enabled)
-            : (await Promise.all([
-                // DM `.ai` is the global switch for every incoming DM on
-                // this paired account. Keep the per-chat record in sync for
-                // the owner's own chat so an in-flight reply is cancellable
-                // and `.ai on` does not duplicate through the legacy branch.
-                setAIAutoReplySettings(botNumber, { enabled }),
-                setAIChatMode(botNumber, from, enabled)
-            ])).every(Boolean);
-        if (!saved) return reply('❌ Failed to save AI mode configuration.');
-        const scopeText = isGroup
-            ? (enabled ? 'AI will now automatically respond in this group.' : 'AI will remain silent in this group.')
-            : (enabled ? 'AI will now automatically respond to all incoming DMs.' : 'AI will remain silent for all incoming DMs.');
-        return reply(`╭═══ 🤖 AI MODE ═══⊷\n┃❃│ ${toSansBoldItalic('AI Auto-Reply')}: ${enabled ? 'ON ✅' : 'OFF 🔕'}\n┃❃│ ${toSansBoldItalic(scopeText)}\n┃❃│ ${toSansBoldItalic('For a one-shot answer, use')}: .ai <question>\n╰═════════════════⊷`);
-    }
-
-    const q = args.join(' ') || quoted?.text;
-    if (!q) return reply('❌ Usage: .ai on | .ai off | .ai status | .ai <question>');
-    if (looksLikeIdentityQuestion(q)) return reply(aiReply('AI POWERHOUSE', identityAnswer(q)));
-    try {
-        await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
-        const answer = await smartAI(withLanguageMatch(q));
-        await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        return reply(aiReply('AI POWERHOUSE', answer || '❌ AI failed to respond.'));
-    } catch (e) {
-        console.log('[AI] smartAI failed:', e.message);
-        await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        const detail = String(e?.message || '');
-        if (/GROQ_API_KEY not set|OPENROUTER_API_KEY not set/i.test(detail)) {
-            return reply('❌ AI is not configured on this deployment. Add GROQ_API_KEY or OPENROUTER_API_KEY in Railway Variables, then redeploy.');
-        }
-        return reply(`❌ AI provider is temporarily unavailable.\n▸ ${safeAIError(e)}`);
-    }
-});
-
-// 2. gpt — flagship one-shot AI command
+// 1. gpt / ai — flagship AI command
 cmd({ pattern: 'gpt', alias: ['chatgpt'], desc: 'Chat with GPT AI (remembers recent context, replies in your language)', category: 'ai', react: '🤖' },
 async (conn, mek, m, { reply, args, quoted, from }) => {
     const q = args.join(' ') || quoted?.text;
     if (!q) return reply(`❌ Usage: .gpt <your question>\n📝 Example: .gpt What is AI?`);
 
+    // Identity questions ("who is Ahmad/Bunty") are answered directly —
+    // guaranteed correct, not dependent on a free AI proxy following
+    // instructions reliably.
     if (looksLikeIdentityQuestion(q)) {
         return reply(aiReply('GPT', identityAnswer(q)));
     }
@@ -106,14 +76,29 @@ async (conn, mek, m, { reply, args, quoted, from }) => {
     try {
         await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
         const prompt = buildPromptWithMemory(from, q);
-        const answer = await smartAI(prompt);
-        if (answer) saveToHistory(from, q, answer);
+        try {
+            const answer = await smartAI(prompt);
+            saveToHistory(from, q, answer);
+            await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+            return reply(aiReply('GPT', answer));
+        } catch (e) {
+            console.log('[GPT] Groq failed/skipped, trying old chain:', e.message);
+        }
+        const res = await axios.get(`https://gpt-3-5.apis-bj-devs.workers.dev/?prompt=${encodeURIComponent(prompt)}`, { timeout: 20000 });
+        if (!res.data?.reply || looksLikeErrorPayload(res.data.reply)) throw new Error('No reply');
+        saveToHistory(from, q, res.data.reply);
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        return reply(aiReply('GPT', answer || '❌ AI failed to respond.'));
-    } catch (e) {
-        console.log('[GPT] smartAI failed:', e.message);
+        reply(aiReply('GPT', res.data.reply));
+    } catch {
+        try {
+            const answer = await felixFallback(withLanguageMatch(q));
+            if (!answer) throw new Error('No reply');
+            saveToHistory(from, q, answer);
+            await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+            return reply(aiReply('GPT', answer));
+        } catch {}
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        reply('❌ AI service is busy — please try again later!');
+        reply('❌ GPT failed, try again!');
     }
 });
 
@@ -126,13 +111,28 @@ async (conn, mek, m, { reply, args, quoted, from }) => {
     try {
         await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
         const prompt = withLanguageMatch(q);
-        const answer = await smartAI(prompt);
+        try {
+            const answer = await smartAI(prompt);
+            await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+            return reply(aiReply('DEEPSEEK AI', answer));
+        } catch (e) {
+            console.log('[DEEPSEEK] Groq failed, trying old chain:', e.message);
+        }
+        const res = await axios.get(`https://all-in-1-ais.officialhectormanuel.workers.dev/?query=${encodeURIComponent(prompt)}&model=deepseek`, { timeout: 25000 });
+        const answer = res.data?.response || res.data?.reply || res.data?.result || res.data?.answer;
+        if (!answer || looksLikeErrorPayload(answer)) throw new Error('No reply');
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        return reply(aiReply('DEEPSEEK AI', answer || '❌ AI failed to respond.'));
-    } catch (e) {
-        console.log('[DEEPSEEK] smartAI failed:', e.message);
+        reply(aiReply('DEEPSEEK AI', answer));
+    } catch {
+        try {
+            const answer = await felixFallback(withLanguageMatch(q));
+            if (answer) {
+                await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+                return reply(aiReply('AI (Fallback)', answer));
+            }
+        } catch {}
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        reply('❌ DeepSeek failed, try again later!');
+        reply('❌ DeepSeek failed, try again!');
     }
 });
 
@@ -145,42 +145,48 @@ async (conn, mek, m, { reply, args, quoted, from }) => {
     try {
         await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
         const prompt = withLanguageMatch(q);
-        const answer = await smartAI(prompt);
+        try {
+            const answer = await smartAI(prompt);
+            await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+            return reply(aiReply('GEMINI 1.5', answer));
+        } catch (e) {
+            console.log('[GEMINI] Groq failed, trying old chain:', e.message);
+        }
+        const res = await axios.get(`https://gemini-1-5-flash.bjcoderx.workers.dev/?text=${encodeURIComponent(prompt)}`, { timeout: 25000 });
+        const answer = res.data?.response || res.data?.reply || res.data?.result || res.data?.answer || (typeof res.data === 'string' ? res.data : null);
+        if (!answer || looksLikeErrorPayload(answer)) throw new Error('No reply');
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        return reply(aiReply('GEMINI 1.5', answer || '❌ AI failed to respond.'));
-    } catch (e) {
-        console.log('[GEMINI] smartAI failed:', e.message);
+        reply(aiReply('GEMINI 1.5', answer));
+    } catch {
+        try {
+            const answer = await felixFallback(withLanguageMatch(q));
+            if (answer) {
+                await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
+                return reply(aiReply('AI (Fallback)', answer));
+            }
+        } catch {}
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        reply('❌ Gemini failed, try again later!');
+        reply('❌ Gemini failed, try again!');
     }
 });
 
-// 4. gsearch
+// 4. imagine / ai image
 cmd({ pattern: 'gsearch', alias: ['google', 'search'], desc: 'Search the web', category: 'ai', react: '🔍' },
 async (conn, mek, m, { reply, args, from }) => {
     const q = args.join(' ');
     if (!q) return reply('❌ Usage: .gsearch <query>\n📝 Example: .gsearch best food in Pakistan');
     try {
         await conn.sendMessage(from, { react: { text: '⏳', key: mek.key } });
-        // Siputzx's Google route now returns 404. DuckDuckGo's public JSON
-        // endpoint provides an answer/related topics without an API key.
-        const res = await axios.get('https://api.duckduckgo.com/', {
-            params: { q, format: 'json', no_html: 1, skip_disambig: 1 },
-            timeout: 15000,
-            headers: { 'User-Agent': 'MINI-FINAL/1.0 (search client)' }
-        });
-        const lines = [];
-        if (res.data?.AbstractText) lines.push(`1. ${res.data.Heading || q}\n┃❃│    🔗 ${res.data.AbstractURL || `https://www.google.com/search?q=${encodeURIComponent(q)}`}`);
-        for (const topic of (res.data?.RelatedTopics || [])) {
-            if (topic?.FirstURL && topic?.Text) lines.push(`${lines.length + 1}. ${topic.Text}\n┃❃│    🔗 ${topic.FirstURL}`);
-            if (lines.length >= 5) break;
-        }
-        if (!lines.length) lines.push(`1. Open web results\n┃❃│    🔗 https://www.google.com/search?q=${encodeURIComponent(q)}`);
+        const res = await axios.get(`https://google-search.bjcoderx.workers.dev/?q=${encodeURIComponent(q)}`, { timeout: 15000 });
+        const results = res.data?.results || res.data?.data || [];
+        if (!results.length) throw new Error('No results');
+        const lines = results.slice(0,5).map((r,i) => `${i+1}. ${r.title || r.name}\n┃❃│    🔗 ${r.link || r.url || ''}`);
         await conn.sendMessage(from, { react: { text: '✅', key: mek.key } });
-        return reply(`╭═══ 🔍 WEB SEARCH ═══⊷\n┃❃│ 🔎 Query: ${q}\n┃❃╭──────────────\n┃❃│ ${lines.join('\n┃❃│ ')}\n┃❃╰───────────────\n╰═════════════════⊷\n\n${FOOTER}`);
-    } catch (e) {
-        console.log('[GSEARCH] DuckDuckGo failed:', e.message);
+        reply(`╭═══ 🔍 GOOGLE SEARCH ═══⊷\n┃❃│ 🔎 Query: ${q}\n┃❃╭──────────────\n┃❃│ ${lines.join('\n┃❃│ ')}\n┃❃╰───────────────\n╰═════════════════⊷\n\n${FOOTER}`);
+    } catch {
         await conn.sendMessage(from, { react: { text: '❌', key: mek.key } });
-        return reply(`❌ Search service unavailable. Try: https://www.google.com/search?q=${encodeURIComponent(q)}`);
+        reply(`❌ Search failed. Try: https://google.com/search?q=${encodeURIComponent(q)}`);
     }
 });
+
+// 6. currency

@@ -35,10 +35,6 @@ const getAntideleteSendTo = async (botNumber, chatId) => {
             Antidelete.findOne({ chatId: chatKeyFor(botNumber, chatId) }),
             Antidelete.findOne({ chatId: globalKeyFor(botNumber) })
         ]);
-        // An active overall setting belongs to this paired bot number and
-        // must override older per-chat paths. When overall mode is off, keep
-        // the per-chat setting behavior intact.
-        if (globalData?.status === true && globalData.sendTo) return globalData.sendTo;
         if (chatData && chatData.sendTo) return chatData.sendTo;
         if (globalData && globalData.sendTo) return globalData.sendTo;
         return 'same';

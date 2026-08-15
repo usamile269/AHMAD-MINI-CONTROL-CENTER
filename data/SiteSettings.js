@@ -11,19 +11,11 @@ const DEFAULTS = {
     channelLink: '',
     bgMusicUrl: '',
     heroTagline: 'WhatsApp Pairing',
-    heroBrightness: 135,
-    voiceUrl: 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663847350286/XfJiIPNnVCaSmlUI.wav',
-    musicUrl: 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663847350286/PQgvMfuaAVQVVQHT.mp3',
-    voiceVolume: 200,
-    musicVolume: 60,
-    bgVideoUrl: '',
-    bgImageUrl: '',
-    leavesEnabled: false,
-    primaryColor: '#ff69b4',
-    accentColor: '#da70d6',
-    youtubeLink: '',
-    githubLink: '',
-    instagramLink: '',
+    // 🆕 FEATURE (Bunty: "songs popup trigger se admin panel se"): when on,
+    // an attractive animated "🎵 Enable Sound" popup appears on page load
+    // (only if bgMusicUrl is set) instead of the silent toggle button —
+    // also doubles as the click-to-satisfy-browser-autoplay-restriction
+    // gesture, so the song can actually start playing right away.
     audioPopupEnabled: false
 };
 

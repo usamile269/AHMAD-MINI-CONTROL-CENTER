@@ -72,7 +72,7 @@ cmd({
 ┃❃╰───────────────
 ╰═════════════════⊷
 
-${randomFooter()}`;
+> ${randomFooter()}`;
 
             await conn.sendMessage(from, {
                 react: { text: "❌", key: m.key }
@@ -133,7 +133,7 @@ ${randomFooter()}`;
 ┃❃╰───────────────
 ╰═════════════════⊷
 
-${randomFooter()}`;
+> ${randomFooter()}`;
 
         await conn.sendMessage(from, {
             text: done
@@ -176,7 +176,7 @@ cmd({
 ┃❃╰───────────────
 ╰═════════════════⊷
 
-${randomFooter()}`;
+> ${randomFooter()}`;
 
             await conn.sendMessage(from, {
                 react: { text: "❌", key: m.key }
@@ -227,7 +227,7 @@ ${randomFooter()}`;
 ┃  🔒 Check your inbox
 ╰━━━━━━━━━━━━━━━━━━━━━━╯
 
-${randomFooter()}`;
+> ${randomFooter()}`;
 
         await conn.sendMessage(from, {
             text: done
