@@ -28,7 +28,7 @@ module.exports = {
     // Aesthetic Settings
     PREFIX: process.env.PREFIX || '.',
     WORK_TYPE: process.env.WORK_TYPE || "public",
-    FOOTER: '✦﹒𝙊𝘽𝙎𝙄𝘿𝙄𝘼𝙉 𝙇𝙐𝙓𝙀 𝘼𝙃𝙈𝘼𝘿 𝙈𝙄𝙉𝙄',
+    FOOTER: '> 𝙊𝘽𝙎𝙄𝘿𝙄𝘼𝙉 𝙇𝙐𝙓𝙀 𝘼𝙃𝙈𝘼𝘿 𝙈𝙄𝙉𝙄',
     
     // Media
     WELCOME_VIDEO_PATH: 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663847350286/SXRRcyGNoZseRhqx.mp4',

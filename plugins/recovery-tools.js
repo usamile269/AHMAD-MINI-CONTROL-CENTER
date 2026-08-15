@@ -120,7 +120,7 @@ cmd({
     react: "🗑️",
     filename: __filename
 }, async (conn, mek, m, { from, reply }) => {
-    reply(`╭═══ 🗑️ ${toSansBold('DELETED MESSAGE RECOVERY')} ═══⊷\n┃❃│ ${toSansBold('Deleted messages are automatically')}\n┃❃│ ${toSansBold('recovered by the Anti-Delete feature')}\n┃❃│ ${toSansBold('if it\'s enabled.')}\n┃❃│\n┃❃│ Use .antidelete on/off to enable it.\n┃❃│ Use .delpath same/private to choose\n┃❃│ where recovered messages go.\n╰═════════════════⊷`);
+    reply(`╭═══ 🗑️ ${toSansBold('DELETED MESSAGE RECOVERY')} ═══⊷\n┃❃│ ${toSansBold('Deleted messages are automatically')}\n┃❃│ ${toSansBold('recovered by the Anti-Delete feature')}\n┃❃│ ${toSansBold('if it\'s enabled.')}\n┃❃│\n┃❃│ Use .antidelete on/off to enable it.\n┃❃│ Use .delpath same/private to choose\n┃❃│ where recovered messages go.\n╰═════════════════⊷\n\n${randomFooter()}`);
 });
 
 // ==================== VV TO OWNER DOCUMENT ====================

@@ -6,7 +6,7 @@ const config = require('../config');
 // AHMAD MINI — UTILITY TOOLS
 // ====================================================
 
-const FOOTER = () => "\n\n> " + (config.BOT_FOOTER || randomFooter());
+const FOOTER = () => "\n\n" + (config.BOT_FOOTER || randomFooter());
 
 // 1. getpp - Get Profile Picture
 cmd({
