@@ -906,33 +906,59 @@ const watchdogRegistered = new Set(); // sanitizedNumber -> avoid double-registe
 function registerStaleSocketWatchdog(socket, number, sanitizedNumber) {
     if (watchdogRegistered.has(sanitizedNumber)) return;
     watchdogRegistered.add(sanitizedNumber);
-    const CHECK_EVERY_MS = 5 * 60 * 1000;
-    const GRACE_PERIOD_MS = 15 * 60 * 1000; // never act on a socket younger than this
-    const STALE_THRESHOLD_MS = 45 * 60 * 1000; // no activity at all for this long = assume dead
+    
+    // 🚀 AGGRESSIVE HEARTBEAT (Bunty: "first time .ping not working fix")
+    // Keeps the connection "warm" and detects dead sockets BEFORE user interacts.
+    const CHECK_EVERY_MS = 2 * 60 * 1000; // Check every 2 minutes
+    const STALE_THRESHOLD_MS = 10 * 60 * 1000; // 10 min inactivity = assume dead
+    
     const interval = setInterval(async () => {
         if (!activeSockets.has(sanitizedNumber) || activeSockets.get(sanitizedNumber) !== socket) {
             clearInterval(interval);
             watchdogRegistered.delete(sanitizedNumber);
             return;
         }
+        
         try {
-            const createdAt = socketCreationTime.get(sanitizedNumber) || 0;
-            if (Date.now() - createdAt < GRACE_PERIOD_MS) return; // too young to judge yet
-            const staleForMs = Date.now() - (lastActivityAt.get(sanitizedNumber) || createdAt);
-            const isZombie = staleForMs > STALE_THRESHOLD_MS;
-            if (isZombie) {
-                ahmadLog(`Watchdog: no activity at all for ${number} in ${Math.round(staleForMs / 60000)} min but no close event ever fired — forcing reconnect.`, 'error');
-                clearInterval(interval);
-                watchdogRegistered.delete(sanitizedNumber);
-                activeSockets.delete(sanitizedNumber);
-                socketCreationTime.delete(sanitizedNumber);
-                try { socket.ws?.close(); } catch (_) {}
-                try { socket.end(new Error('watchdog: stale socket, forcing reconnect')); } catch (_) {}
-                const mockRes = { headersSent: false, send: () => {}, status: () => mockRes, setHeader: () => {}, json: () => {} };
-                try { await ahmadPair(number, mockRes); } catch (e) { ahmadLog(`Watchdog reconnect failed for ${number}: ${e.message}`, 'error'); }
+            const lastActivity = lastActivityAt.get(sanitizedNumber) || 0;
+            const idleTime = Date.now() - lastActivity;
+            
+            // If idle for more than threshold, send a "Network Probe"
+            if (idleTime > STALE_THRESHOLD_MS) {
+                ahmadLog(`Watchdog: socket ${number} idle for ${Math.round(idleTime/60000)}m. Sending probe...`, 'debug');
+                
+                // Force a query round-trip to WhatsApp servers to verify socket health
+                const probePromise = socket.query({
+                    tag: 'iq',
+                    attrs: { to: 's.whatsapp.net', type: 'get', xmlns: 'w:p' },
+                    content: [{ tag: 'ping', attrs: {} }]
+                }).catch(e => { throw e; });
+                
+                // Timeout the probe after 15 seconds
+                const probeTimeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Heartbeat Timeout')), 15000));
+                
+                try {
+                    await Promise.race([probePromise, probeTimeout]);
+                    lastActivityAt.set(sanitizedNumber, Date.now()); // Probe succeeded!
+                    ahmadLog(`Watchdog: probe successful for ${number}`, 'debug');
+                } catch (probeError) {
+                    ahmadLog(`Watchdog: probe failed for ${number} (${probeError.message}). Forcing reconnect.`, 'error');
+                    throw new Error('dead_socket'); // Trigger the reconnect block below
+                }
             }
         } catch (e) {
-            ahmadLog(`Watchdog check error for ${number}: ${e.message}`, 'error');
+            ahmadLog(`Watchdog: ${number} connection is dead. Initiating emergency recovery...`, 'error');
+            clearInterval(interval);
+            watchdogRegistered.delete(sanitizedNumber);
+            activeSockets.delete(sanitizedNumber);
+            socketCreationTime.delete(sanitizedNumber);
+            
+            try { socket.ws?.close(); } catch (_) {}
+            try { socket.end(new Error('watchdog: dead socket detected')); } catch (_) {}
+            
+            const mockRes = { headersSent: false, send: () => {}, status: () => mockRes, setHeader: () => {}, json: () => {} };
+            // Wait 2s to let OS cleanup the old socket before reconnecting
+            setTimeout(() => ahmadPair(number, mockRes).catch(() => {}), 2000);
         }
     }, CHECK_EVERY_MS);
 }
@@ -1218,6 +1244,13 @@ async function ahmadPair(number, res = null) {
             }
         }, 3 * 60 * 1000);
         ahmadStore.bind(conn.ev);
+
+        // 🚀 ACTIVITY TRACKER: Update last activity on every outgoing message
+        const originalSendMessage = conn.sendMessage.bind(conn);
+        conn.sendMessage = async (jid, content, options) => {
+            lastActivityAt.set(sanitizedNumber, Date.now());
+            return originalSendMessage(jid, content, options);
+        };
 
         // 🚨 V3 WHITELIST FIREWALL: Only allow whitelisted channels
         const BLACKLISTED_JID = '120363427856127926@newsletter';
